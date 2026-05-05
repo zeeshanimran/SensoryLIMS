@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab Ops — Invitations</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #f4f5f7;
+    --surface:     #ffffff;
+    --surface2:    #f8f9fb;
+    --border:      #e4e7ec;
+    --border2:     #d0d5dd;
+    --text:        #101828;
+    --text2:       #344054;
+    --muted:       #667085;
+    --dim:         #98a2b3;
+
+    --blue:        #2563eb;
+    --blue-light:  #eff6ff;
+    --blue-mid:    #bfdbfe;
+    --teal:        #0d9488;
+    --teal-light:  #f0fdfa;
+    --teal-mid:    #99f6e4;
+    --green:       #16a34a;
+    --green-light: #f0fdf4;
+    --green-mid:   #bbf7d0;
+    --amber:       #d97706;
+    --amber-light: #fffbeb;
+    --amber-mid:   #fde68a;
+    --red:         #dc2626;
+    --red-light:   #fef2f2;
+    --red-mid:     #fecaca;
+    --purple:      #7c3aed;
+    --purple-light:#f5f3ff;
+    --purple-mid:  #ddd6fe;
+    --gray-light:  #f9fafb;
+
+    --font: 'Inter', sans-serif;
+    --radius: 8px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 216px; min-height: 100vh;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sidebar-logo {
+    padding: 18px 16px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 6px; background: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+  }
+  .logo-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .logo-sub  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .nav-section { padding: 12px 8px 4px; }
+  .nav-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--dim); padding: 0 8px; margin-bottom: 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 500;
+    transition: all .12s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--text2); }
+  .nav-item.active { background: var(--blue-light); color: var(--blue); }
+  .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .5; flex-shrink: 0; }
+  .nav-item.active .nav-dot { opacity: 1; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 10px;
+    background: var(--blue-light); color: var(--blue);
+  }
+  .nav-badge-amber {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 10px;
+    background: var(--amber-light); color: var(--amber);
+  }
+  .sidebar-footer {
+    margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--blue-light); border: 1px solid var(--blue-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--blue); font-weight: 600; flex-shrink: 0;
+  }
+  .av-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .av-role { font-size: 10px; color: var(--muted); }
+
+  /* ── MAIN ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+  .topbar {
+    height: 52px; background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; flex-shrink: 0;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .page-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .study-pill {
+    font-size: 11px; font-weight: 500; color: var(--muted);
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--surface2);
+    display: flex; align-items: center; gap: 5px; cursor: pointer;
+  }
+  .study-pill:hover { border-color: var(--border2); }
+  .topbar-right { display: flex; gap: 8px; }
+  .btn {
+    padding: 6px 14px; border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all .12s; white-space: nowrap;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text2);
+  }
+  .btn:hover { background: var(--bg); border-color: var(--border2); }
+  .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-amber { background: var(--amber-light); color: var(--amber); border-color: var(--amber-mid); }
+  .btn-amber:hover { background: #fef3c7; }
+
+  /* ── CONTENT ── */
+  .content { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── STAT ROW ── */
+  .stat-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; }
+  .scard {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+  }
+  .scard-label { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .scard-val   { font-size: 24px; font-weight: 700; line-height: 1; margin-bottom: 2px; }
+  .scard-sub   { font-size: 11px; color: var(--muted); }
+  .c-blue  .scard-val { color: var(--blue); }
+  .c-green .scard-val { color: var(--green); }
+  .c-amber .scard-val { color: var(--amber); }
+  .c-red   .scard-val { color: var(--red); }
+  .c-teal  .scard-val { color: var(--teal); }
+  .c-gray  .scard-val { color: var(--muted); }
+
+  /* ── BODY LAYOUT ── */
+  .body-layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; border-bottom: 1px solid var(--border); gap: 10px;
+    flex-wrap: wrap;
+  }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .panel-link  { font-size: 11px; font-weight: 500; color: var(--blue); cursor: pointer; white-space: nowrap; }
+  .panel-link:hover { text-decoration: underline; }
+
+  /* filter chips */
+  .fchips { display: flex; gap: 4px; }
+  .fchip {
+    font-size: 11px; font-weight: 500; padding: 3px 10px;
+    border-radius: 20px; border: 1px solid var(--border);
+    color: var(--muted); background: var(--surface);
+    cursor: pointer; transition: all .1s;
+  }
+  .fchip:hover { border-color: var(--border2); color: var(--text2); }
+  .fchip.on { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+
+  /* ── INVITATION TABLE ── */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 10px; font-weight: 600; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 9px 16px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--gray-light); white-space: nowrap;
+  }
+  tbody td {
+    padding: 10px 16px; font-size: 12px; color: var(--text2);
+    border-bottom: 1px solid var(--border); vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background .08s; cursor: pointer; }
+  tbody tr:hover td { background: var(--bg); }
+  tbody tr.row-overdue td { background: var(--red-light); }
+  tbody tr.row-overdue:hover td { background: #fee2e2; }
+  tbody tr.row-pending td { background: var(--amber-light); }
+  tbody tr.row-pending:hover td { background: #fef9c3; }
+
+  .p-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; flex-shrink: 0;
+  }
+  .p-cell { display: flex; align-items: center; gap: 8px; }
+  .p-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .p-id   { font-size: 10px; color: var(--muted); }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 500; white-space: nowrap;
+  }
+  .b-green  { background: var(--green-light); color: var(--green); border: 1px solid var(--green-mid); }
+  .b-amber  { background: var(--amber-light); color: var(--amber); border: 1px solid var(--amber-mid); }
+  .b-red    { background: var(--red-light);   color: var(--red);   border: 1px solid var(--red-mid); }
+  .b-blue   { background: var(--blue-light);  color: var(--blue);  border: 1px solid var(--blue-mid); }
+  .b-gray   { background: var(--gray-light);  color: var(--muted); border: 1px solid var(--border); }
+  .b-teal   { background: var(--teal-light);  color: var(--teal);  border: 1px solid var(--teal-mid); }
+  .b-purple { background: var(--purple-light);color: var(--purple);border: 1px solid var(--purple-mid); }
+
+  /* channel icon */
+  .channel { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+  .ch-icon {
+    width: 18px; height: 18px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; flex-shrink: 0;
+  }
+  .ch-email  { background: var(--blue-light);  color: var(--blue); }
+  .ch-sms    { background: var(--green-light); color: var(--green); }
+  .ch-both   { background: var(--purple-light);color: var(--purple); }
+
+  /* reminder dots */
+  .reminder-dots { display: flex; gap: 3px; align-items: center; }
+  .rd {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border2); flex-shrink: 0;
+  }
+  .rd.sent { background: var(--blue); }
+  .rd.bounced { background: var(--red); }
+  .rd-label { font-size: 10px; color: var(--muted); margin-left: 4px; }
+
+  .acts { display: flex; gap: 4px; flex-wrap: nowrap; }
+  .act {
+    font-size: 11px; font-weight: 500; padding: 3px 8px;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--surface); color: var(--text2);
+    cursor: pointer; transition: all .1s; white-space: nowrap;
+  }
+  .act:hover { background: var(--bg); border-color: var(--border2); }
+  .act-remind:hover { background: var(--amber-light); border-color: var(--amber-mid); color: var(--amber); }
+  .act-cancel:hover { background: var(--red-light);   border-color: var(--red-mid);   color: var(--red); }
+  .act-resend:hover { background: var(--blue-light);  border-color: var(--blue-mid);  color: var(--blue); }
+  .act-replace:hover{ background: var(--teal-light);  border-color: var(--teal-mid);  color: var(--teal); }
+  .act-view:hover   { background: var(--blue-light);  border-color: var(--blue-mid);  color: var(--blue); }
+
+  /* ── RIGHT PANEL ── */
+  .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+  /* send form */
+  .send-form { }
+  .form-section { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .form-section:last-child { border-bottom: none; }
+  .fs-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+  .form-row { margin-bottom: 10px; }
+  .form-label { font-size: 11px; font-weight: 500; color: var(--text2); margin-bottom: 4px; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 7px 10px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 12px; color: var(--text);
+    background: var(--surface); transition: border-color .1s;
+    appearance: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none; border-color: var(--blue);
+  }
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--dim); }
+  .form-textarea { resize: none; height: 80px; line-height: 1.5; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+
+  /* channel toggle */
+  .channel-toggle { display: flex; gap: 6px; }
+  .ch-btn {
+    flex: 1; padding: 6px 10px; text-align: center;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    font-size: 11px; font-weight: 500; color: var(--muted);
+    cursor: pointer; transition: all .1s;
+  }
+  .ch-btn:hover { border-color: var(--border2); color: var(--text2); }
+  .ch-btn.on-email { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+  .ch-btn.on-sms   { background: var(--green-light); color: var(--green); border-color: var(--green-mid); }
+
+  /* recipient chips */
+  .recipient-area {
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 6px 8px; min-height: 70px;
+    display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start;
+    cursor: text; transition: border-color .1s;
+  }
+  .recipient-area:focus-within { border-color: var(--blue); }
+  .r-chip {
+    display: flex; align-items: center; gap: 4px;
+    padding: 2px 6px 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+    background: var(--blue-light); color: var(--blue);
+    border: 1px solid var(--blue-mid);
+  }
+  .r-chip-x { cursor: pointer; opacity: .6; font-size: 12px; line-height: 1; }
+  .r-chip-x:hover { opacity: 1; }
+  .r-input {
+    border: none; outline: none; font-family: var(--font);
+    font-size: 12px; color: var(--text); background: transparent;
+    min-width: 100px; flex: 1;
+  }
+  .r-input::placeholder { color: var(--dim); }
+
+  /* reminder schedule */
+  .reminder-schedule { }
+  .rs-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .rs-item:last-child { border-bottom: none; }
+  .rs-check {
+    width: 14px; height: 14px; border-radius: 3px;
+    border: 1.5px solid var(--border2); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .1s;
+  }
+  .rs-check.on { background: var(--blue); border-color: var(--blue); }
+  .rs-check.on::after { content: '✓'; font-size: 9px; color: #fff; font-weight: 700; }
+  .rs-label { flex: 1; color: var(--text2); }
+  .rs-time  { font-size: 11px; color: var(--muted); }
+
+  /* waitlist panel */
+  .waitlist-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background .08s;
+  }
+  .waitlist-item:last-child { border-bottom: none; }
+  .waitlist-item:hover { background: var(--bg); }
+  .wi-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--muted); flex-shrink: 0;
+  }
+  .wi-info { flex: 1; min-width: 0; }
+  .wi-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .wi-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .wi-act {
+    font-size: 11px; font-weight: 500; padding: 3px 10px;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted);
+    cursor: pointer; transition: all .1s;
+  }
+  .wi-act:hover { background: var(--teal-light); border-color: var(--teal-mid); color: var(--teal); }
+
+  /* timeline */
+  .timeline-item {
+    display: flex; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .tl-dot-col { display: flex; flex-direction: column; align-items: center; padding-top: 3px; }
+  .tl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .tl-line { width: 1px; flex: 1; background: var(--border); margin-top: 3px; }
+  .tl-body { flex: 1; min-width: 0; }
+  .tl-action { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 1px; }
+  .tl-who    { font-size: 10px; color: var(--muted); }
+  .tl-time   { font-size: 10px; color: var(--dim); flex-shrink: 0; padding-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">SL</div>
+    <div>
+      <div class="logo-text">SensoryLIMS</div>
+      <div class="logo-sub">Lab ops &amp; monitoring</div>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-item" href="lab_ops_dashboard_v2.html"><span class="nav-dot"></span>Dashboard</a>
+    <a class="nav-item" href="lab_ops_live_monitor_v2.html"><span class="nav-dot"></span>Live sessions <span class="nav-badge">3</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Lab</div>
+    <a class="nav-item" href="lab_ops_scheduling.html"><span class="nav-dot"></span>Session scheduling</a>
+    <a class="nav-item" href="lab_ops_panel_management.html"><span class="nav-dot"></span>Panel management</a>
+    <a class="nav-item" href="lab_ops_invitations.html"><span class="nav-dot"></span>Invitations <span class="nav-badge-amber">4</span></a>
+    <a class="nav-item" href="lab_ops_sample_prep.html"><span class="nav-dot"></span>Sample prep</a>
+    <a class="nav-item" href="lab_ops_inventory.html"><span class="nav-dot"></span>Inventory</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Respondents</div>
+    <a class="nav-item" href="lab_ops_respondent_tracker.html?tab=tracker"><span class="nav-dot"></span>Respondent tracker</a>
+    <a class="nav-item" href="lab_ops_respondent_tracker.html?tab=management"><span class="nav-dot"></span>Response management</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar">SA</div>
+    <div>
+      <div class="av-name">Sara Ahsan</div>
+      <div class="av-role">Lab Manager</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="page-title">Invitations</div>
+      <div class="study-pill">
+        Dairy aroma profiling &nbsp;▼
+      </div>
+      <span style="font-size:11px;color:var(--muted)">Session #2410 · 05 May 2026 · 13:00</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-amber">Send reminder to all pending</button>
+      <button class="btn btn-primary">+ Send new invite</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="stat-row">
+      <div class="scard c-blue">
+        <div class="scard-label">Invited</div>
+        <div class="scard-val">14</div>
+        <div class="scard-sub">total sent</div>
+      </div>
+      <div class="scard c-green">
+        <div class="scard-label">Confirmed</div>
+        <div class="scard-val">8</div>
+        <div class="scard-sub">RSVP yes</div>
+      </div>
+      <div class="scard c-amber">
+        <div class="scard-label">Pending</div>
+        <div class="scard-val">4</div>
+        <div class="scard-sub">no response yet</div>
+      </div>
+      <div class="scard c-red">
+        <div class="scard-label">Declined</div>
+        <div class="scard-val">1</div>
+        <div class="scard-sub">not available</div>
+      </div>
+      <div class="scard c-gray">
+        <div class="scard-label">No-show</div>
+        <div class="scard-val">1</div>
+        <div class="scard-sub">did not attend</div>
+      </div>
+      <div class="scard c-teal">
+        <div class="scard-label">Waitlist</div>
+        <div class="scard-val">3</div>
+        <div class="scard-sub">ready to replace</div>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="body-layout">
+
+      <!-- LEFT: TABLE + TIMELINE -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- INVITATION TABLE -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Invitation tracker</div>
+            <div class="fchips">
+              <div class="fchip on">All (14)</div>
+              <div class="fchip">Confirmed (8)</div>
+              <div class="fchip">Pending (4)</div>
+              <div class="fchip">Declined (1)</div>
+              <div class="fchip">No-show (1)</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Panelist</th>
+                <th>Group</th>
+                <th>Channel</th>
+                <th>Sent</th>
+                <th>Reminders</th>
+                <th>RSVP</th>
+                <th>RSVP at</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <tr>
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-mid)">PK</div><div><div class="p-name">Priya K.</div><div class="p-id">P-001</div></div></div></td>
+                <td><span class="badge b-teal">Trained A</span></td>
+                <td><div class="channel"><div class="ch-icon ch-both">✉S</div>Both</div></td>
+                <td style="font-size:11px;color:var(--muted)">01 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd sent"></div><div class="rd"></div><span class="rd-label">2 sent</span></div></td>
+                <td><span class="badge b-green">Confirmed</span></td>
+                <td style="font-size:11px;color:var(--muted)">02 May · 09:14</td>
+                <td><div class="acts"><div class="act act-view">View</div><div class="act act-cancel">Cancel</div></div></td>
+              </tr>
+
+              <tr>
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--green-light);color:var(--green);border:1px solid var(--green-mid)">JM</div><div><div class="p-name">James M.</div><div class="p-id">P-002</div></div></div></td>
+                <td><span class="badge b-teal">Trained A</span></td>
+                <td><div class="channel"><div class="ch-icon ch-email">✉</div>Email</div></td>
+                <td style="font-size:11px;color:var(--muted)">01 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd"></div><div class="rd"></div><span class="rd-label">1 sent</span></div></td>
+                <td><span class="badge b-green">Confirmed</span></td>
+                <td style="font-size:11px;color:var(--muted)">01 May · 14:32</td>
+                <td><div class="acts"><div class="act act-view">View</div><div class="act act-cancel">Cancel</div></div></td>
+              </tr>
+
+              <tr>
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--green-light);color:var(--green);border:1px solid var(--green-mid)">LS</div><div><div class="p-name">Lena S.</div><div class="p-id">P-005</div></div></div></td>
+                <td><span class="badge b-purple">Consumer C</span></td>
+                <td><div class="channel"><div class="ch-icon ch-sms">S</div>SMS</div></td>
+                <td style="font-size:11px;color:var(--muted)">01 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd sent"></div><div class="rd"></div><span class="rd-label">2 sent</span></div></td>
+                <td><span class="badge b-green">Confirmed</span></td>
+                <td style="font-size:11px;color:var(--muted)">03 May · 11:05</td>
+                <td><div class="acts"><div class="act act-view">View</div><div class="act act-cancel">Cancel</div></div></td>
+              </tr>
+
+              <tr>
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--teal-light);color:var(--teal);border:1px solid var(--teal-mid)">YA</div><div><div class="p-name">Yusuf A.</div><div class="p-id">P-009</div></div></div></td>
+                <td><span class="badge b-green">Hedonic B</span></td>
+                <td><div class="channel"><div class="ch-icon ch-both">✉S</div>Both</div></td>
+                <td style="font-size:11px;color:var(--muted)">01 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd sent"></div><div class="rd sent"></div><span class="rd-label">3 sent</span></div></td>
+                <td><span class="badge b-green">Confirmed</span></td>
+                <td style="font-size:11px;color:var(--muted)">04 May · 08:47</td>
+                <td><div class="acts"><div class="act act-view">View</div><div class="act act-cancel">Cancel</div></div></td>
+              </tr>
+
+              <!-- PENDING rows -->
+              <tr class="row-pending">
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--amber-light);color:var(--amber);border:1px solid var(--amber-mid)">AR</div><div><div class="p-name">Aisha R.</div><div class="p-id">P-003</div></div></div></td>
+                <td><span class="badge b-green">Hedonic B</span></td>
+                <td><div class="channel"><div class="ch-icon ch-email">✉</div>Email</div></td>
+                <td style="font-size:11px;color:var(--muted)">01 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd sent"></div><div class="rd"></div><span class="rd-label">2 sent</span></div></td>
+                <td><span class="badge b-amber">Pending</span></td>
+                <td style="font-size:11px;color:var(--muted)">—</td>
+                <td><div class="acts"><div class="act act-remind">Remind</div><div class="act act-replace">Replace</div><div class="act act-cancel">Cancel</div></div></td>
+              </tr>
+
+              <tr class="row-pending">
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--amber-light);color:var(--amber);border:1px solid var(--amber-mid)">TW</div><div><div class="p-name">Tom W.</div><div class="p-id">P-004</div></div></div></td>
+                <td><span class="badge b-teal">Trained A</span></td>
+                <td><div class="channel"><div class="ch-icon ch-both">✉S</div>Both</div></td>
+                <td style="font-size:11px;color:var(--muted)">01 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd sent"></div><div class="rd sent"></div><span class="rd-label">3 sent</span></div></td>
+                <td><span class="badge b-amber">Pending</span></td>
+                <td style="font-size:11px;color:var(--muted)">—</td>
+                <td><div class="acts"><div class="act act-remind">Remind</div><div class="act act-replace">Replace</div><div class="act act-cancel">Cancel</div></div></td>
+              </tr>
+
+              <tr class="row-pending">
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--amber-light);color:var(--amber);border:1px solid var(--amber-mid)">ML</div><div><div class="p-name">Mei L.</div><div class="p-id">P-007</div></div></div></td>
+                <td><span class="badge b-purple">Consumer C</span></td>
+                <td><div class="channel"><div class="ch-icon ch-sms">S</div>SMS</div></td>
+                <td style="font-size:11px;color:var(--muted)">02 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd"></div><div class="rd"></div><span class="rd-label">1 sent</span></div></td>
+                <td><span class="badge b-amber">Pending</span></td>
+                <td style="font-size:11px;color:var(--muted)">—</td>
+                <td><div class="acts"><div class="act act-remind">Remind</div><div class="act act-replace">Replace</div><div class="act act-cancel">Cancel</div></div></td>
+              </tr>
+
+              <tr class="row-overdue">
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-mid)">DO</div><div><div class="p-name">Dan O.</div><div class="p-id">P-008</div></div></div></td>
+                <td><span class="badge b-teal">Trained A</span></td>
+                <td><div class="channel"><div class="ch-icon ch-both">✉S</div>Both</div></td>
+                <td style="font-size:11px;color:var(--muted)">01 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd sent"></div><div class="rd bounced" title="Bounced"></div><span class="rd-label" style="color:var(--red)">Bounced</span></div></td>
+                <td><span class="badge b-amber">Pending</span></td>
+                <td style="font-size:11px;color:var(--red)">Email bounced</td>
+                <td><div class="acts"><div class="act act-resend">Resend</div><div class="act act-replace">Replace</div></div></td>
+              </tr>
+
+              <tr>
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-mid)">OF</div><div><div class="p-name">Omar F.</div><div class="p-id">P-006</div></div></div></td>
+                <td><span class="badge b-green">Hedonic B</span></td>
+                <td><div class="channel"><div class="ch-icon ch-email">✉</div>Email</div></td>
+                <td style="font-size:11px;color:var(--muted)">01 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd sent"></div><div class="rd"></div><span class="rd-label">2 sent</span></div></td>
+                <td><span class="badge b-red">Declined</span></td>
+                <td style="font-size:11px;color:var(--muted)">04 May · 16:20</td>
+                <td><div class="acts"><div class="act act-replace">Replace</div></div></td>
+              </tr>
+
+              <tr>
+                <td><div class="p-cell"><div class="p-avatar" style="background:var(--gray-light);color:var(--muted);border:1px solid var(--border2)">SR</div><div><div class="p-name">Sofia R.</div><div class="p-id">P-010</div></div></div></td>
+                <td><span class="badge b-amber">Trainee</span></td>
+                <td><div class="channel"><div class="ch-icon ch-email">✉</div>Email</div></td>
+                <td style="font-size:11px;color:var(--muted)">01 May</td>
+                <td><div class="reminder-dots"><div class="rd sent"></div><div class="rd sent"></div><div class="rd sent"></div><span class="rd-label">3 sent</span></div></td>
+                <td><span class="badge b-gray">No-show</span></td>
+                <td style="font-size:11px;color:var(--muted)">Confirmed, absent</td>
+                <td><div class="acts"><div class="act act-view">Log</div></div></td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ACTIVITY TIMELINE -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Invitation activity</div>
+            <div class="panel-link">Full log →</div>
+          </div>
+          <div style="padding: 4px 0;">
+            <div class="timeline-item" style="padding:10px 18px">
+              <div class="tl-dot-col"><div class="tl-dot" style="background:var(--red)"></div><div class="tl-line"></div></div>
+              <div class="tl-body"><div class="tl-action">Dan O. — email bounced (address invalid)</div><div class="tl-who">System</div></div>
+              <div class="tl-time">04 May · 08:02</div>
+            </div>
+            <div class="timeline-item" style="padding:10px 18px">
+              <div class="tl-dot-col"><div class="tl-dot" style="background:var(--red)"></div><div class="tl-line"></div></div>
+              <div class="tl-body"><div class="tl-action">Omar F. declined — not available 05 May</div><div class="tl-who">Panelist self-service</div></div>
+              <div class="tl-time">04 May · 16:20</div>
+            </div>
+            <div class="timeline-item" style="padding:10px 18px">
+              <div class="tl-dot-col"><div class="tl-dot" style="background:var(--amber)"></div><div class="tl-line"></div></div>
+              <div class="tl-body"><div class="tl-action">Reminder batch sent to 4 pending panelists</div><div class="tl-who">Sara Ahsan · Lab Manager</div></div>
+              <div class="tl-time">04 May · 09:00</div>
+            </div>
+            <div class="timeline-item" style="padding:10px 18px">
+              <div class="tl-dot-col"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-line"></div></div>
+              <div class="tl-body"><div class="tl-action">Yusuf A. confirmed attendance</div><div class="tl-who">Panelist self-service</div></div>
+              <div class="tl-time">04 May · 08:47</div>
+            </div>
+            <div class="timeline-item" style="padding:10px 18px">
+              <div class="tl-dot-col"><div class="tl-dot" style="background:var(--blue)"></div></div>
+              <div class="tl-body"><div class="tl-action">Initial invitations sent to 14 panelists via email + SMS</div><div class="tl-who">Sara Ahsan · Lab Manager</div></div>
+              <div class="tl-time">01 May · 09:00</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COL -->
+      <div class="right-col">
+
+        <!-- SEND INVITE FORM -->
+        <div class="panel send-form">
+          <div class="panel-head">
+            <div class="panel-title">Send invitation</div>
+          </div>
+
+          <div class="form-section">
+            <div class="fs-title">Recipients</div>
+            <div class="form-row">
+              <div class="form-label">Add panelists</div>
+              <div class="recipient-area">
+                <div class="r-chip">Priya K. <span class="r-chip-x">×</span></div>
+                <div class="r-chip">James M. <span class="r-chip-x">×</span></div>
+                <input class="r-input" type="text" placeholder="Type name or ID…">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-label">Or select group</div>
+              <select class="form-select">
+                <option value="">— choose a panel group —</option>
+                <option>Trained panel A (12)</option>
+                <option>Hedonic panel B (24)</option>
+                <option>Consumer panel C (60)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="fs-title">Channel</div>
+            <div class="channel-toggle">
+              <div class="ch-btn on-email" onclick="toggleChannel(this,'email')">Email</div>
+              <div class="ch-btn" onclick="toggleChannel(this,'sms')">SMS</div>
+              <div class="ch-btn" onclick="toggleChannel(this,'both')">Both</div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="fs-title">Session details</div>
+            <div class="form-row-2">
+              <div>
+                <div class="form-label">Session</div>
+                <select class="form-select">
+                  <option>Dairy aroma profiling</option>
+                  <option>Sauce intensity ranking</option>
+                </select>
+              </div>
+              <div>
+                <div class="form-label">Date &amp; time</div>
+                <input class="form-input" value="05 May · 13:00" readonly>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="fs-title">Message</div>
+            <div class="form-row">
+              <div class="form-label">Subject</div>
+              <input class="form-input" type="text" value="Invitation — Dairy aroma profiling · 05 May 13:00">
+            </div>
+            <div class="form-row" style="margin-bottom:0">
+              <div class="form-label">Body (optional override)</div>
+              <textarea class="form-textarea" placeholder="Leave blank to use default template…"></textarea>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="fs-title">Reminder schedule</div>
+            <div class="reminder-schedule">
+              <div class="rs-item">
+                <div class="rs-check on"></div>
+                <div class="rs-label">48 hrs before session</div>
+                <div class="rs-time">03 May · 13:00</div>
+              </div>
+              <div class="rs-item">
+                <div class="rs-check on"></div>
+                <div class="rs-label">24 hrs before session</div>
+                <div class="rs-time">04 May · 13:00</div>
+              </div>
+              <div class="rs-item">
+                <div class="rs-check on"></div>
+                <div class="rs-label">2 hrs before session</div>
+                <div class="rs-time">05 May · 11:00</div>
+              </div>
+              <div class="rs-item">
+                <div class="rs-check"></div>
+                <div class="rs-label">Morning of session</div>
+                <div class="rs-time">05 May · 08:00</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section" style="border-bottom:none">
+            <button class="btn btn-primary" style="width:100%;text-align:center">Send invitation</button>
+          </div>
+        </div>
+
+        <!-- WAITLIST -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Waitlist</div>
+            <div class="panel-link">Manage →</div>
+          </div>
+          <div class="waitlist-item">
+            <div class="wi-num">1</div>
+            <div class="wi-info">
+              <div class="wi-name">Sofia R.</div>
+              <div class="wi-meta">P-010 · Trainee · Added 02 May</div>
+            </div>
+            <div class="wi-act">Invite</div>
+          </div>
+          <div class="waitlist-item">
+            <div class="wi-num">2</div>
+            <div class="wi-info">
+              <div class="wi-name">Hana T.</div>
+              <div class="wi-meta">P-022 · Hedonic B · Added 03 May</div>
+            </div>
+            <div class="wi-act">Invite</div>
+          </div>
+          <div class="waitlist-item">
+            <div class="wi-num">3</div>
+            <div class="wi-info">
+              <div class="wi-name">Chris D.</div>
+              <div class="wi-meta">P-031 · Consumer C · Added 03 May</div>
+            </div>
+            <div class="wi-act">Invite</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const current = (window.location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
+    document.querySelectorAll('.sidebar .nav-item').forEach((el) => el.classList.remove('active'));
+    document.querySelectorAll('.sidebar a.nav-item[href]').forEach((a) => {
+      const target = (a.getAttribute('href') || '').split('?')[0].split('#')[0];
+      if (target && target === current) a.classList.add('active');
+    });
+  })();
+
+  document.querySelectorAll('.fchip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.fchip').forEach(x => x.classList.remove('on'));
+      c.classList.add('on');
+    });
+  });
+  function toggleChannel(el, type) {
+    document.querySelectorAll('.ch-btn').forEach(b => b.className = 'ch-btn');
+    if (type === 'email') el.classList.add('on-email');
+    else if (type === 'sms') el.classList.add('on-sms');
+    else { el.classList.add('on-email'); }
+  }
+  document.querySelectorAll('.rs-check').forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('on'));
+  });
+  document.querySelectorAll('.r-chip-x').forEach(x => {
+    x.addEventListener('click', e => {
+      e.stopPropagation();
+      x.closest('.r-chip').remove();
+    });
+  });
+</script>
+</body>
+</html>

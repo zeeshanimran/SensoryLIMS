@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab Ops — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #f4f5f7;
+    --surface:     #ffffff;
+    --surface2:    #f8f9fb;
+    --border:      #e4e7ec;
+    --border2:     #d0d5dd;
+    --text:        #101828;
+    --text2:       #344054;
+    --muted:       #667085;
+    --dim:         #98a2b3;
+
+    --blue:        #2563eb;
+    --blue-light:  #eff6ff;
+    --blue-mid:    #bfdbfe;
+    --teal:        #0d9488;
+    --teal-light:  #f0fdfa;
+    --teal-mid:    #99f6e4;
+    --green:       #16a34a;
+    --green-light: #f0fdf4;
+    --green-mid:   #bbf7d0;
+    --amber:       #d97706;
+    --amber-light: #fffbeb;
+    --amber-mid:   #fde68a;
+    --red:         #dc2626;
+    --red-light:   #fef2f2;
+    --red-mid:     #fecaca;
+    --gray-light:  #f9fafb;
+
+    --font: 'Inter', sans-serif;
+    --radius: 8px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 216px; min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sidebar-logo {
+    padding: 18px 16px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; letter-spacing: -.5px;
+  }
+  .logo-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .logo-sub  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+  .nav-section { padding: 12px 8px 4px; }
+  .nav-label {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    color: var(--dim); padding: 0 8px; margin-bottom: 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--muted);
+    font-size: 12px; font-weight: 500; transition: all .12s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--text2); }
+  .nav-item.active { background: var(--blue-light); color: var(--blue); }
+  .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .5; flex-shrink: 0; }
+  .nav-item.active .nav-dot { opacity: 1; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 10px;
+    background: var(--blue-light); color: var(--blue);
+  }
+  .nav-badge-amber {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 10px;
+    background: var(--amber-light); color: var(--amber);
+  }
+
+  .sidebar-footer {
+    margin-top: auto; padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--blue-light); border: 1px solid var(--blue-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--blue); font-weight: 600; flex-shrink: 0;
+  }
+  .av-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .av-role { font-size: 10px; color: var(--muted); }
+
+  /* ── MAIN ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+  .topbar {
+    height: 52px; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 0 24px; flex-shrink: 0;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .page-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .topbar-date {
+    font-size: 11px; font-weight: 500; color: var(--muted);
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--surface2);
+  }
+  .live-pill {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 500; color: var(--green);
+    padding: 3px 10px; border-radius: 20px;
+    background: var(--green-light); border: 1px solid var(--green-mid);
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .topbar-right { display: flex; gap: 8px; }
+  .btn {
+    padding: 6px 14px; border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all .12s; white-space: nowrap;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text2);
+  }
+  .btn:hover { background: var(--bg); border-color: var(--border2); }
+  .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  .content { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── ALERT ── */
+  .alert {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500;
+    border: 1px solid var(--amber-mid);
+    background: var(--amber-light); color: var(--amber);
+  }
+  .alert-x { margin-left: auto; cursor: pointer; opacity: .6; }
+  .alert-x:hover { opacity: 1; }
+
+  /* ── STAT ROW ── */
+  .stat-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; }
+  .scard {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    cursor: pointer; transition: border-color .12s;
+  }
+  .scard:hover { border-color: var(--border2); }
+  .scard-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  }
+  .scard-val { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .scard-sub { font-size: 11px; color: var(--muted); }
+  .scard.c-blue  .scard-val { color: var(--blue); }
+  .scard.c-green .scard-val { color: var(--green); }
+  .scard.c-amber .scard-val { color: var(--amber); }
+  .scard.c-red   .scard-val { color: var(--red); }
+  .scard.c-teal  .scard-val { color: var(--teal); }
+
+  /* mini sparkline */
+  .spark { width: 100%; height: 28px; margin-top: 10px; }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+  }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .panel-link { font-size: 11px; font-weight: 500; color: var(--blue); cursor: pointer; }
+  .panel-link:hover { text-decoration: underline; }
+
+  /* ── BOOTH GRID ── */
+  .booth-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; padding: 14px; }
+  .booth {
+    border-radius: var(--radius-sm); padding: 12px 10px;
+    border: 1px solid var(--border); cursor: pointer;
+    transition: all .12s;
+  }
+  .booth:hover { border-color: var(--border2); }
+  .booth.active  { background: var(--blue-light);  border-color: var(--blue-mid); }
+  .booth.waiting { background: var(--amber-light); border-color: var(--amber-mid); }
+  .booth.empty   { background: var(--gray-light);  border-color: var(--border); }
+  .booth.done    { background: var(--green-light); border-color: var(--green-mid); }
+  .booth.flagged { background: var(--amber-light); border-color: var(--amber-mid); }
+
+  .booth-num {
+    font-size: 16px; font-weight: 700; margin-bottom: 3px;
+  }
+  .booth.active  .booth-num { color: var(--blue); }
+  .booth.waiting .booth-num { color: var(--amber); }
+  .booth.empty   .booth-num { color: var(--dim); }
+  .booth.done    .booth-num { color: var(--green); }
+  .booth.flagged .booth-num { color: var(--amber); }
+
+  .booth-name { font-size: 10px; color: var(--muted); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .booth-prog { font-size: 10px; font-weight: 500; }
+  .booth.active  .booth-prog { color: var(--blue); }
+  .booth.waiting .booth-prog { color: var(--amber); }
+  .booth.done    .booth-prog { color: var(--green); }
+  .booth.flagged .booth-prog { color: var(--red); }
+  .booth.empty   .booth-prog { color: var(--dim); }
+
+  .prog-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 2px; }
+  .booth.active  .prog-fill { background: var(--blue); }
+  .booth.done    .prog-fill { background: var(--green); }
+  .booth.waiting .prog-fill { background: var(--amber); }
+  .booth.flagged .prog-fill { background: var(--amber); }
+
+  /* legend row */
+  .booth-legend {
+    display: flex; gap: 16px; padding: 0 14px 12px;
+    border-top: 1px solid var(--border); padding-top: 10px;
+  }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── SESSION LIST ── */
+  .session-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 18px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background .08s;
+  }
+  .session-row:last-child { border-bottom: none; }
+  .session-row:hover { background: var(--bg); }
+  .s-time { font-size: 11px; font-weight: 500; color: var(--muted); width: 46px; flex-shrink: 0; }
+  .s-info { flex: 1; min-width: 0; }
+  .s-name { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+  .s-meta { font-size: 10px; color: var(--muted); }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 500; white-space: nowrap;
+  }
+  .b-blue   { background: var(--blue-light);  color: var(--blue);  border: 1px solid var(--blue-mid); }
+  .b-teal   { background: var(--teal-light);  color: var(--teal);  border: 1px solid var(--teal-mid); }
+  .b-green  { background: var(--green-light); color: var(--green); border: 1px solid var(--green-mid); }
+  .b-amber  { background: var(--amber-light); color: var(--amber); border: 1px solid var(--amber-mid); }
+  .b-gray   { background: var(--gray-light);  color: var(--muted); border: 1px solid var(--border); }
+
+  /* ── RESPONDENT TABLE ── */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 10px; font-weight: 600; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 9px 16px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--gray-light); white-space: nowrap;
+  }
+  tbody td {
+    padding: 10px 16px; font-size: 12px; color: var(--text2);
+    border-bottom: 1px solid var(--border); vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background .08s; cursor: pointer; }
+  tbody tr:hover td { background: var(--bg); }
+  tbody tr.row-flag td { background: var(--amber-light); }
+  tbody tr.row-flag:hover td { background: #fef9c3; }
+  tbody tr.row-removed td { background: var(--red-light); opacity: .75; }
+
+  .p-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .p-id   { font-size: 10px; color: var(--muted); }
+
+  .mini-bar { display: inline-flex; align-items: center; gap: 6px; }
+  .mbar { width: 72px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .mfill { height: 100%; border-radius: 2px; }
+
+  .acts { display: flex; gap: 4px; }
+  .act {
+    font-size: 11px; font-weight: 500;
+    padding: 3px 9px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text2); cursor: pointer; transition: all .1s; white-space: nowrap;
+  }
+  .act:hover { background: var(--bg); border-color: var(--border2); }
+  .act-flag:hover   { background: var(--amber-light); border-color: var(--amber-mid); color: var(--amber); }
+  .act-remove:hover { background: var(--red-light);   border-color: var(--red-mid);   color: var(--red); }
+  .act-nudge:hover  { background: var(--teal-light);  border-color: var(--teal-mid);  color: var(--teal); }
+  .act-view:hover   { background: var(--blue-light);  border-color: var(--blue-mid);  color: var(--blue); }
+  .act-reinstate:hover { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">SL</div>
+    <div>
+      <div class="logo-text">SensoryLIMS</div>
+      <div class="logo-sub">Lab ops &amp; monitoring</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-item" href="lab_ops_dashboard_v2.html"><span class="nav-dot"></span>Dashboard</a>
+    <a class="nav-item" href="lab_ops_live_monitor_v2.html"><span class="nav-dot"></span>Live sessions <span class="nav-badge">3</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Lab</div>
+    <a class="nav-item" href="lab_ops_scheduling.html"><span class="nav-dot"></span>Session scheduling</a>
+    <a class="nav-item" href="lab_ops_panel_management.html"><span class="nav-dot"></span>Panel management</a>
+    <a class="nav-item" href="lab_ops_invitations.html"><span class="nav-dot"></span>Invitations <span class="nav-badge-amber">4</span></a>
+    <a class="nav-item" href="lab_ops_sample_prep.html"><span class="nav-dot"></span>Sample prep</a>
+    <a class="nav-item" href="lab_ops_inventory.html"><span class="nav-dot"></span>Inventory</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Respondents</div>
+    <a class="nav-item" href="lab_ops_respondent_tracker.html?tab=tracker"><span class="nav-dot"></span>Respondent tracker</a>
+    <a class="nav-item" href="lab_ops_respondent_tracker.html?tab=management"><span class="nav-dot"></span>Response management</a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="avatar">SA</div>
+    <div>
+      <div class="av-name">Sara Ahsan</div>
+      <div class="av-role">Lab Manager</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="page-title">Dashboard</div>
+      <div class="topbar-date">Tue 05 May 2026</div>
+      <div class="live-pill"><span class="live-dot"></span>Live</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn">+ New session</button>
+      <a class="btn btn-primary" href="lab_ops_live_monitor_v2.html" style="text-decoration:none;display:inline-flex;align-items:center;">Open live monitor</a>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ALERT -->
+    <div class="alert" id="alert">
+      ⚠ P-007 (Booth 7) has been on Q3 for 14 min — may need attention
+      <span class="alert-x" onclick="document.getElementById('alert').remove()">✕</span>
+    </div>
+
+    <!-- STAT ROW -->
+    <div class="stat-row">
+      <div class="scard c-blue">
+        <div class="scard-label">Active sessions</div>
+        <div class="scard-val">3</div>
+        <div class="scard-sub">2 completing soon</div>
+        <svg class="spark" viewBox="0 0 120 28" preserveAspectRatio="none">
+          <polyline points="0,22 20,18 40,20 60,14 80,16 100,10 120,8" fill="none" stroke="#bfdbfe" stroke-width="1.5"/>
+          <polyline points="0,22 20,18 40,20 60,14 80,16 100,10 120,8" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="120" stroke-dashoffset="0"/>
+        </svg>
+      </div>
+      <div class="scard c-green">
+        <div class="scard-label">Responses today</div>
+        <div class="scard-val">47</div>
+        <div class="scard-sub">+12 since 10 am</div>
+        <svg class="spark" viewBox="0 0 120 28" preserveAspectRatio="none">
+          <polyline points="0,24 20,22 40,20 60,18 80,14 100,10 120,6" fill="none" stroke="#bbf7d0" stroke-width="1.5"/>
+          <polyline points="0,24 20,22 40,20 60,18 80,14 100,10 120,6" fill="none" stroke="#16a34a" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="scard c-amber">
+        <div class="scard-label">Flagged</div>
+        <div class="scard-val">2</div>
+        <div class="scard-sub">Needs review</div>
+        <svg class="spark" viewBox="0 0 120 28" preserveAspectRatio="none">
+          <polyline points="0,24 20,24 40,16 60,24 80,8 100,16 120,8" fill="none" stroke="#fde68a" stroke-width="1.5"/>
+          <polyline points="0,24 20,24 40,16 60,24 80,8 100,16 120,8" fill="none" stroke="#d97706" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="scard c-red">
+        <div class="scard-label">Removed</div>
+        <div class="scard-val">1</div>
+        <div class="scard-sub">Awaiting reinstate?</div>
+        <svg class="spark" viewBox="0 0 120 28" preserveAspectRatio="none">
+          <polyline points="0,24 20,22 40,22 60,22 80,14 100,14 120,14" fill="none" stroke="#fecaca" stroke-width="1.5"/>
+          <polyline points="0,24 20,22 40,22 60,22 80,14 100,14 120,14" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="scard c-teal">
+        <div class="scard-label">Scheduled today</div>
+        <div class="scard-val">5</div>
+        <div class="scard-sub">2 upcoming</div>
+        <svg class="spark" viewBox="0 0 120 28" preserveAspectRatio="none">
+          <polyline points="0,22 20,18 40,14 60,16 80,12 100,10 120,8" fill="none" stroke="#99f6e4" stroke-width="1.5"/>
+          <polyline points="0,22 20,18 40,14 60,16 80,12 100,10 120,8" fill="none" stroke="#0d9488" stroke-width="1.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- BOOTH + SCHEDULE -->
+    <div class="grid-2">
+
+      <!-- BOOTH STATUS -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Booth status</div>
+          <div class="panel-link">Manage booths →</div>
+        </div>
+        <div class="booth-grid">
+          <div class="booth active">
+            <div class="booth-num">01</div>
+            <div class="booth-name">Priya K.</div>
+            <div class="booth-prog">Q5 / 10 · 2/4</div>
+            <div class="prog-bar"><div class="prog-fill" style="width:50%"></div></div>
+          </div>
+          <div class="booth active">
+            <div class="booth-num">02</div>
+            <div class="booth-name">James M.</div>
+            <div class="booth-prog">Q8 / 10 · 3/4</div>
+            <div class="prog-bar"><div class="prog-fill" style="width:80%"></div></div>
+          </div>
+          <div class="booth waiting">
+            <div class="booth-num">03</div>
+            <div class="booth-name">Aisha R.</div>
+            <div class="booth-prog">Not started</div>
+            <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+          </div>
+          <div class="booth active">
+            <div class="booth-num">04</div>
+            <div class="booth-name">Tom W.</div>
+            <div class="booth-prog">Q3 / 10 · 1/4</div>
+            <div class="prog-bar"><div class="prog-fill" style="width:30%"></div></div>
+          </div>
+          <div class="booth done">
+            <div class="booth-num">05</div>
+            <div class="booth-name">Lena S.</div>
+            <div class="booth-prog">Complete ✓</div>
+            <div class="prog-bar"><div class="prog-fill" style="width:100%"></div></div>
+          </div>
+          <div class="booth empty">
+            <div class="booth-num">06</div>
+            <div class="booth-name">—</div>
+            <div class="booth-prog">Empty</div>
+          </div>
+          <div class="booth flagged">
+            <div class="booth-num">07</div>
+            <div class="booth-name">Omar F.</div>
+            <div class="booth-prog">Flagged · Q3</div>
+            <div class="prog-bar"><div class="prog-fill" style="width:25%; background:var(--red)"></div></div>
+          </div>
+          <div class="booth empty">
+            <div class="booth-num">08</div>
+            <div class="booth-name">—</div>
+            <div class="booth-prog">Empty</div>
+          </div>
+        </div>
+        <div class="booth-legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div>Answering</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>Complete</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--amber)"></div>Waiting / Flagged</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--border2)"></div>Empty</div>
+        </div>
+      </div>
+
+      <!-- TODAY'S SESSIONS -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Today's sessions</div>
+          <div class="panel-link">Full schedule →</div>
+        </div>
+        <div class="session-row">
+          <div class="s-time">09:00</div>
+          <div class="s-info">
+            <div class="s-name">Yoghurt texture study A</div>
+            <div class="s-meta">8 panelists · Booths 1–4</div>
+          </div>
+          <span class="badge b-blue">Live</span>
+        </div>
+        <div class="session-row">
+          <div class="s-time">10:30</div>
+          <div class="s-info">
+            <div class="s-name">Beverage sweetness panel</div>
+            <div class="s-meta">6 panelists · Booths 5–8</div>
+          </div>
+          <span class="badge b-blue">Live</span>
+        </div>
+        <div class="session-row">
+          <div class="s-time">11:00</div>
+          <div class="s-info">
+            <div class="s-name">Cracker crunch test</div>
+            <div class="s-meta">4 panelists · Booths 1–2</div>
+          </div>
+          <span class="badge b-blue">Live</span>
+        </div>
+        <div class="session-row">
+          <div class="s-time">13:00</div>
+          <div class="s-info">
+            <div class="s-name">Dairy aroma profiling</div>
+            <div class="s-meta">10 panelists · Booths 1–5</div>
+          </div>
+          <span class="badge b-amber">Prep</span>
+        </div>
+        <div class="session-row">
+          <div class="s-time">15:30</div>
+          <div class="s-info">
+            <div class="s-name">Sauce intensity ranking</div>
+            <div class="s-meta">8 panelists · Booths 3–6</div>
+          </div>
+          <span class="badge b-gray">Scheduled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVE RESPONDENTS -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Active respondents — Yoghurt texture study A</div>
+        <div class="panel-link">Full tracker →</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Panelist</th>
+            <th>Booth</th>
+            <th>Status</th>
+            <th>Current Q</th>
+            <th>Products done</th>
+            <th>Progress</th>
+            <th>Time on Q</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="p-name">Priya K.</div><div class="p-id">P-001</div></td>
+            <td>01</td>
+            <td><span class="badge b-blue">Answering</span></td>
+            <td>Q5 / 10</td>
+            <td>2 / 4</td>
+            <td><div class="mini-bar"><div class="mbar"><div class="mfill" style="width:50%;background:var(--blue)"></div></div><span style="font-size:11px;color:var(--muted)">50%</span></div></td>
+            <td style="font-size:11px;color:var(--muted)">1m 12s</td>
+            <td><div class="acts"><div class="act act-flag">Flag</div><div class="act act-remove">Remove</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="p-name">James M.</div><div class="p-id">P-002</div></td>
+            <td>02</td>
+            <td><span class="badge b-blue">Answering</span></td>
+            <td>Q8 / 10</td>
+            <td>3 / 4</td>
+            <td><div class="mini-bar"><div class="mbar"><div class="mfill" style="width:80%;background:var(--blue)"></div></div><span style="font-size:11px;color:var(--muted)">80%</span></div></td>
+            <td style="font-size:11px;color:var(--muted)">0m 34s</td>
+            <td><div class="acts"><div class="act act-flag">Flag</div><div class="act act-remove">Remove</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="p-name">Aisha R.</div><div class="p-id">P-003</div></td>
+            <td>03</td>
+            <td><span class="badge b-gray">Waiting</span></td>
+            <td>—</td>
+            <td>0 / 4</td>
+            <td><div class="mini-bar"><div class="mbar"><div class="mfill" style="width:0%"></div></div><span style="font-size:11px;color:var(--muted)">0%</span></div></td>
+            <td style="font-size:11px;color:var(--muted)">—</td>
+            <td><div class="acts"><div class="act act-nudge">Nudge</div><div class="act act-remove">Remove</div></div></td>
+          </tr>
+          <tr class="row-flag">
+            <td><div class="p-name">Omar F.</div><div class="p-id">P-004</div></td>
+            <td>07</td>
+            <td><span class="badge b-amber">Flagged</span></td>
+            <td>Q3 / 10</td>
+            <td>1 / 4</td>
+            <td><div class="mini-bar"><div class="mbar"><div class="mfill" style="width:25%;background:var(--amber)"></div></div><span style="font-size:11px;color:var(--amber)">25%</span></div></td>
+            <td style="font-size:11px;color:var(--red);font-weight:600">14m 02s ⚠</td>
+            <td><div class="acts"><div class="act">Review</div><div class="act act-remove">Remove</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="p-name">Lena S.</div><div class="p-id">P-005</div></td>
+            <td>05</td>
+            <td><span class="badge b-green">Complete</span></td>
+            <td>Done</td>
+            <td>4 / 4</td>
+            <td><div class="mini-bar"><div class="mbar"><div class="mfill" style="width:100%;background:var(--green)"></div></div><span style="font-size:11px;color:var(--green)">100%</span></div></td>
+            <td style="font-size:11px;color:var(--muted)">—</td>
+            <td><div class="acts"><div class="act act-view">View</div><div class="act act-remove">Remove</div></div></td>
+          </tr>
+          <tr class="row-removed">
+            <td><div class="p-name">Yusuf A.</div><div class="p-id">P-006</div></td>
+            <td>—</td>
+            <td><span class="badge" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-mid)">Removed</span></td>
+            <td>Q2 / 10</td>
+            <td>1 / 4</td>
+            <td><div class="mini-bar"><div class="mbar"><div class="mfill" style="width:15%;background:var(--red)"></div></div><span style="font-size:11px;color:var(--muted)">15%</span></div></td>
+            <td style="font-size:11px;color:var(--muted)">—</td>
+            <td><div class="acts"><div class="act act-reinstate">Reinstate</div></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    const current = (window.location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
+    document.querySelectorAll('.sidebar .nav-item').forEach((el) => el.classList.remove('active'));
+    document.querySelectorAll('.sidebar a.nav-item[href]').forEach((a) => {
+      const target = (a.getAttribute('href') || '').split('?')[0].split('#')[0];
+      if (target && target === current) a.classList.add('active');
+    });
+  })();
+</script>
+</body>
+</html>

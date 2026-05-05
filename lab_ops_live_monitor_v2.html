@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab Ops — Live Session Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #f4f5f7;
+    --surface:     #ffffff;
+    --surface2:    #f8f9fb;
+    --border:      #e4e7ec;
+    --border2:     #d0d5dd;
+    --text:        #101828;
+    --text2:       #344054;
+    --muted:       #667085;
+    --dim:         #98a2b3;
+
+    --blue:        #2563eb;
+    --blue-light:  #eff6ff;
+    --blue-mid:    #bfdbfe;
+    --teal:        #0d9488;
+    --teal-light:  #f0fdfa;
+    --teal-mid:    #99f6e4;
+    --green:       #16a34a;
+    --green-light: #f0fdf4;
+    --green-mid:   #bbf7d0;
+    --amber:       #d97706;
+    --amber-light: #fffbeb;
+    --amber-mid:   #fde68a;
+    --red:         #dc2626;
+    --red-light:   #fef2f2;
+    --red-mid:     #fecaca;
+    --gray-light:  #f9fafb;
+
+    --font: 'Inter', sans-serif;
+    --radius: 8px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 216px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-logo {
+    padding: 18px 16px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px;
+    background: var(--blue);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+    letter-spacing: -.5px;
+  }
+  .logo-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .logo-sub  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+  .nav-section { padding: 12px 8px 4px; }
+  .nav-label {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    color: var(--dim); padding: 0 8px; margin-bottom: 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--muted);
+    font-size: 12px; font-weight: 500;
+    transition: all .12s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--text2); }
+  .nav-item.active { background: var(--blue-light); color: var(--blue); }
+  .nav-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: currentColor; opacity: .5; flex-shrink: 0;
+  }
+  .nav-item.active .nav-dot { opacity: 1; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 10px;
+    background: var(--blue-light); color: var(--blue);
+  }
+
+  .sidebar-footer {
+    margin-top: auto; padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--blue-light);
+    border: 1px solid var(--blue-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--blue); font-weight: 600;
+    flex-shrink: 0;
+  }
+  .av-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .av-role { font-size: 10px; color: var(--muted); }
+
+  /* ── MAIN WRAP ── */
+  .wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; min-width: 0; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    height: 52px; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 0 24px; flex-shrink: 0; gap: 12px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .back-btn {
+    font-size: 11px; font-weight: 500; color: var(--muted);
+    cursor: pointer; padding: 4px 10px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface);
+    flex-shrink: 0; transition: all .12s;
+  }
+  .back-btn:hover { border-color: var(--border2); color: var(--text2); }
+  .sep { color: var(--border2); flex-shrink: 0; }
+  .page-title {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chips { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+  .chip {
+    font-size: 11px; font-weight: 500;
+    padding: 2px 8px; border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted); background: var(--surface2);
+    white-space: nowrap;
+  }
+  .chip-live {
+    background: var(--green-light); color: var(--green);
+    border-color: var(--green-mid);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); flex-shrink: 0;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .topbar-right { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn {
+    padding: 6px 14px; border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all .12s; white-space: nowrap;
+    border: 1px solid var(--border);
+    background: var(--surface); color: var(--text2);
+  }
+  .btn:hover { background: var(--bg); border-color: var(--border2); }
+  .btn-danger {
+    border-color: var(--red-mid); color: var(--red);
+    background: var(--red-light);
+  }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-primary {
+    background: var(--blue); color: #fff;
+    border-color: var(--blue);
+  }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  /* ── CONTENT ── */
+  .content {
+    flex: 1; overflow-y: auto;
+    padding: 20px 24px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* ── STAT CARDS ── */
+  .stat-row {
+    display: grid; grid-template-columns: repeat(6,1fr); gap: 12px;
+  }
+  .scard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .scard-label {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 8px;
+  }
+  .scard-val {
+    font-size: 24px; font-weight: 700;
+    line-height: 1; margin-bottom: 2px;
+    color: var(--text);
+  }
+  .scard-sub { font-size: 11px; color: var(--muted); }
+  .scard.c-blue  .scard-val { color: var(--blue); }
+  .scard.c-green .scard-val { color: var(--green); }
+  .scard.c-teal  .scard-val { color: var(--teal); }
+  .scard.c-amber .scard-val { color: var(--amber); }
+  .scard.c-red   .scard-val { color: var(--red); }
+
+  /* ── PROGRESS STRIP ── */
+  .prog-strip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .ps-label { font-size: 12px; font-weight: 500; color: var(--text2); flex-shrink: 0; }
+  .ps-bar { flex: 1; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+  .ps-fill { height: 100%; background: var(--blue); border-radius: 3px; }
+  .ps-pct { font-size: 13px; font-weight: 600; color: var(--blue); flex-shrink: 0; }
+  .ps-divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+  .ps-meta { font-size: 11px; color: var(--muted); flex-shrink: 0; white-space: nowrap; }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .filter-row { display: flex; gap: 4px; }
+  .fchip {
+    font-size: 11px; font-weight: 500;
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted); background: var(--surface);
+    cursor: pointer; transition: all .1s;
+  }
+  .fchip:hover { border-color: var(--border2); color: var(--text2); }
+  .fchip.on { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: .05em; text-transform: uppercase;
+    color: var(--muted);
+    padding: 9px 16px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--gray-light);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 10px 16px; font-size: 12px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background .08s; cursor: pointer; }
+  tbody tr:hover td { background: var(--bg); }
+  tbody tr.row-flag td { background: var(--amber-light); }
+  tbody tr.row-flag:hover td { background: #fef9c3; }
+  tbody tr.row-removed td { background: var(--red-light); opacity: .75; }
+  tbody tr.row-complete td { background: var(--gray-light); }
+  tbody tr.row-complete:hover td { background: #f3f4f6; }
+
+  .p-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .p-id   { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+  /* badges */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+    white-space: nowrap;
+  }
+  .b-blue   { background: var(--blue-light);  color: var(--blue);  border: 1px solid var(--blue-mid); }
+  .b-teal   { background: var(--teal-light);  color: var(--teal);  border: 1px solid var(--teal-mid); }
+  .b-green  { background: var(--green-light); color: var(--green); border: 1px solid var(--green-mid); }
+  .b-amber  { background: var(--amber-light); color: var(--amber); border: 1px solid var(--amber-mid); }
+  .b-red    { background: var(--red-light);   color: var(--red);   border: 1px solid var(--red-mid); }
+  .b-gray   { background: var(--gray-light);  color: var(--muted); border: 1px solid var(--border); }
+
+  /* q-dots */
+  .qdots { display: flex; gap: 3px; align-items: center; }
+  .qd {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border2); flex-shrink: 0;
+  }
+  .qd.done { background: var(--blue); }
+  .qd.curr { background: var(--amber); outline: 2px solid var(--amber-mid); outline-offset: 1px; }
+  .qd.skip { background: var(--dim); opacity: .4; }
+  .q-txt   { font-size: 11px; color: var(--muted); margin-left: 6px; white-space: nowrap; }
+
+  /* product pips */
+  .ppips { display: flex; gap: 4px; align-items: center; }
+  .pp {
+    width: 12px; height: 12px; border-radius: 3px;
+    background: var(--border); flex-shrink: 0;
+    border: 1px solid var(--border2);
+  }
+  .pp.done { background: var(--teal); border-color: var(--teal); }
+  .pp.curr { background: var(--amber-light); border-color: var(--amber); }
+  .pp-txt  { font-size: 11px; color: var(--muted); margin-left: 5px; }
+
+  .time-ok   { font-size: 11px; color: var(--muted); }
+  .time-warn { font-size: 11px; color: var(--amber); font-weight: 600; }
+  .time-crit { font-size: 11px; color: var(--red);   font-weight: 600; }
+
+  /* action buttons */
+  .acts { display: flex; gap: 4px; flex-wrap: nowrap; }
+  .act {
+    font-size: 11px; font-weight: 500;
+    padding: 3px 9px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface); color: var(--text2);
+    cursor: pointer; transition: all .1s; white-space: nowrap;
+  }
+  .act:hover { background: var(--bg); border-color: var(--border2); }
+  .act-flag:hover    { background: var(--amber-light); border-color: var(--amber-mid); color: var(--amber); }
+  .act-remove:hover  { background: var(--red-light);   border-color: var(--red-mid);   color: var(--red); }
+  .act-reinstate:hover { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+  .act-view:hover    { background: var(--blue-light);  border-color: var(--blue-mid);  color: var(--blue); }
+  .act-nudge:hover   { background: var(--teal-light);  border-color: var(--teal-mid);  color: var(--teal); }
+  .act-skip:hover    { background: var(--blue-light);  border-color: var(--blue-mid);  color: var(--blue); }
+  .act-unflag:hover  { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+
+  /* makeup row */
+  .makeup-cell {
+    padding: 10px 16px !important;
+    border-bottom: none !important;
+  }
+  .makeup-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500; color: var(--blue);
+    cursor: pointer; padding: 5px 12px;
+    border: 1px dashed var(--blue-mid);
+    border-radius: var(--radius-sm);
+    background: var(--blue-light);
+    transition: all .12s;
+  }
+  .makeup-btn:hover { border-style: solid; background: #dbeafe; }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex; align-items: center;
+    justify-content: space-between; flex-shrink: 0; gap: 16px;
+  }
+  .bb-stats { display: flex; align-items: center; gap: 20px; }
+  .bb-stat { font-size: 11px; color: var(--muted); }
+  .bb-stat strong { color: var(--text2); font-weight: 600; }
+  .bb-divider { width: 1px; height: 16px; background: var(--border); }
+  .bb-actions { display: flex; gap: 8px; }
+
+  /* ── REMOVAL MODAL ── */
+  .overlay {
+    display: none; position: absolute; inset: 0;
+    background: rgba(16,24,40,.4); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 12px; width: 420px; padding: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,.12);
+  }
+  .modal-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .modal-sub   { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+  .modal-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
+  .reasons { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .reason {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    cursor: pointer; font-size: 12px; color: var(--text2);
+    transition: all .1s;
+  }
+  .reason:hover { border-color: var(--border2); background: var(--bg); }
+  .reason.sel { border-color: var(--red-mid); background: var(--red-light); color: var(--red); }
+  .r-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--border2); flex-shrink: 0; }
+  .reason.sel .r-dot { background: var(--red); border-color: var(--red); }
+  textarea {
+    width: 100%; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 9px 12px; color: var(--text);
+    font-family: var(--font); font-size: 12px;
+    resize: none; height: 72px; margin-bottom: 18px;
+    transition: border-color .1s;
+  }
+  textarea:focus { outline: none; border-color: var(--blue); }
+  textarea::placeholder { color: var(--dim); }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* ── AUDIT DRAWER ── */
+  .drawer {
+    position: absolute; top: 0; right: -360px; bottom: 0;
+    width: 360px; background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 50; display: flex; flex-direction: column;
+    transition: right .22s ease;
+    box-shadow: -4px 0 20px rgba(0,0,0,.06);
+  }
+  .drawer.open { right: 0; }
+  .drawer-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .drawer-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .drawer-x { font-size: 18px; color: var(--muted); cursor: pointer; line-height: 1; }
+  .drawer-x:hover { color: var(--text); }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .aentry {
+    display: flex; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .aentry:last-child { border-bottom: none; }
+  .adot-col { display: flex; flex-direction: column; align-items: center; padding-top: 3px; }
+  .adot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .aline { width: 1px; flex: 1; background: var(--border); margin-top: 4px; }
+  .aaction { font-size: 12px; color: var(--text2); margin-bottom: 2px; font-weight: 500; }
+  .awho    { font-size: 11px; color: var(--muted); }
+  .atime   { font-size: 11px; color: var(--dim); flex-shrink: 0; padding-top: 2px; }
+
+  /* alert strip */
+  .alert {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500;
+    border: 1px solid var(--amber-mid);
+    background: var(--amber-light);
+    color: var(--amber);
+  }
+  .alert-x { margin-left: auto; cursor: pointer; opacity: .6; font-size: 14px; }
+  .alert-x:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">SL</div>
+    <div>
+      <div class="logo-text">SensoryLIMS</div>
+      <div class="logo-sub">Lab ops &amp; monitoring</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-item" href="lab_ops_dashboard_v2.html"><span class="nav-dot"></span>Dashboard</a>
+    <a class="nav-item" href="lab_ops_live_monitor_v2.html"><span class="nav-dot"></span>Live sessions <span class="nav-badge">3</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Lab</div>
+    <a class="nav-item" href="lab_ops_scheduling.html"><span class="nav-dot"></span>Session scheduling</a>
+    <a class="nav-item" href="lab_ops_panel_management.html"><span class="nav-dot"></span>Panel management</a>
+    <a class="nav-item" href="lab_ops_invitations.html"><span class="nav-dot"></span>Invitations</a>
+    <a class="nav-item" href="lab_ops_sample_prep.html"><span class="nav-dot"></span>Sample prep</a>
+    <a class="nav-item" href="lab_ops_inventory.html"><span class="nav-dot"></span>Inventory</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Respondents</div>
+    <a class="nav-item" href="lab_ops_respondent_tracker.html?tab=tracker"><span class="nav-dot"></span>Respondent tracker</a>
+    <a class="nav-item" href="lab_ops_respondent_tracker.html?tab=management"><span class="nav-dot"></span>Response management</a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="avatar">SA</div>
+    <div>
+      <div class="av-name">Sara Ahsan</div>
+      <div class="av-role">Lab Manager</div>
+    </div>
+  </div>
+</aside>
+
+<!-- WRAP -->
+<div class="wrap">
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="back-btn">← Live sessions</div>
+      <span class="sep">/</span>
+      <div class="page-title">Yoghurt texture study A</div>
+      <div class="chips">
+        <span class="chip">Session #2409</span>
+        <span class="chip">Booths 1–8</span>
+        <span class="chip">Survey v3.1</span>
+        <span class="chip chip-live"><span class="live-dot"></span>Live · 10:14 AM</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" onclick="toggleDrawer()">Audit log</button>
+      <button class="btn btn-danger">Pause session</button>
+      <button class="btn btn-primary">+ Add makeup</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- Alert -->
+    <div class="alert" id="alert">
+      ⚠ P-007 (Omar F.) has been on Q3 for 14 min — may need attention
+      <span class="alert-x" onclick="document.getElementById('alert').remove()">✕</span>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-row">
+      <div class="scard c-blue">
+        <div class="scard-label">Assigned</div>
+        <div class="scard-val">8</div>
+        <div class="scard-sub">panelists</div>
+      </div>
+      <div class="scard c-teal">
+        <div class="scard-label">Answering</div>
+        <div class="scard-val">4</div>
+        <div class="scard-sub">active now</div>
+      </div>
+      <div class="scard c-green">
+        <div class="scard-label">Complete</div>
+        <div class="scard-val">2</div>
+        <div class="scard-sub">all products done</div>
+      </div>
+      <div class="scard">
+        <div class="scard-label">Waiting</div>
+        <div class="scard-val" style="color:var(--muted)">1</div>
+        <div class="scard-sub">not started</div>
+      </div>
+      <div class="scard c-amber">
+        <div class="scard-label">Flagged</div>
+        <div class="scard-val">1</div>
+        <div class="scard-sub">needs review</div>
+      </div>
+      <div class="scard c-red">
+        <div class="scard-label">Removed</div>
+        <div class="scard-val">1</div>
+        <div class="scard-sub">Sara A. · 09:51</div>
+      </div>
+    </div>
+
+    <!-- PROGRESS STRIP -->
+    <div class="prog-strip">
+      <div class="ps-label">Session completion</div>
+      <div class="ps-bar"><div class="ps-fill" style="width:58%"></div></div>
+      <div class="ps-pct">58%</div>
+      <div class="ps-divider"></div>
+      <div class="ps-meta">⏱ 01:14:32 elapsed</div>
+      <div class="ps-divider"></div>
+      <div class="ps-meta">Est. ~22 min remaining</div>
+    </div>
+
+    <!-- RESPONDENT TABLE -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Respondents</div>
+        <div class="filter-row">
+          <div class="fchip on" onclick="filter(this)">All (8)</div>
+          <div class="fchip" onclick="filter(this)">Answering (4)</div>
+          <div class="fchip" onclick="filter(this)">Waiting (1)</div>
+          <div class="fchip" onclick="filter(this)">Flagged (1)</div>
+          <div class="fchip" onclick="filter(this)">Complete (2)</div>
+          <div class="fchip" onclick="filter(this)">Removed (1)</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Panelist</th>
+            <th>Booth</th>
+            <th>Status</th>
+            <th>Question progress</th>
+            <th>Products done</th>
+            <th>Time on Q</th>
+            <th>Last activity</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- COMPLETE x2 -->
+          <tr class="row-complete">
+            <td><div class="p-name">Priya K.</div><div class="p-id">P-001</div></td>
+            <td>01</td>
+            <td><span class="badge b-green">Complete</span></td>
+            <td><div class="qdots"><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><span class="q-txt">10 / 10</span></div></td>
+            <td><div class="ppips"><div class="pp done"></div><div class="pp done"></div><div class="pp done"></div><div class="pp done"></div><span class="pp-txt">4 / 4</span></div></td>
+            <td><span class="time-ok">—</span></td>
+            <td style="font-size:11px;color:var(--muted)">Submitted 10:08</td>
+            <td><div class="acts"><div class="act act-view">View</div><div class="act act-remove" onclick="openModal(event)">Remove</div></div></td>
+          </tr>
+
+          <tr class="row-complete">
+            <td><div class="p-name">Lena S.</div><div class="p-id">P-002</div></td>
+            <td>02</td>
+            <td><span class="badge b-green">Complete</span></td>
+            <td><div class="qdots"><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><span class="q-txt">10 / 10</span></div></td>
+            <td><div class="ppips"><div class="pp done"></div><div class="pp done"></div><div class="pp done"></div><div class="pp done"></div><span class="pp-txt">4 / 4</span></div></td>
+            <td><span class="time-ok">—</span></td>
+            <td style="font-size:11px;color:var(--muted)">Submitted 10:11</td>
+            <td><div class="acts"><div class="act act-view">View</div><div class="act act-remove" onclick="openModal(event)">Remove</div></div></td>
+          </tr>
+
+          <!-- ANSWERING x4 -->
+          <tr>
+            <td><div class="p-name">James M.</div><div class="p-id">P-003</div></td>
+            <td>03</td>
+            <td><span class="badge b-blue">Answering</span></td>
+            <td><div class="qdots"><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd curr"></div><div class="qd"></div><div class="qd"></div><span class="q-txt">Q8 / 10</span></div></td>
+            <td><div class="ppips"><div class="pp done"></div><div class="pp done"></div><div class="pp done"></div><div class="pp curr"></div><span class="pp-txt">3 / 4</span></div></td>
+            <td><span class="time-ok">0m 42s</span></td>
+            <td style="font-size:11px;color:var(--muted)">10:13 AM</td>
+            <td><div class="acts"><div class="act act-skip">Skip Q</div><div class="act act-flag">Flag</div><div class="act act-remove" onclick="openModal(event)">Remove</div></div></td>
+          </tr>
+
+          <tr>
+            <td><div class="p-name">Tom W.</div><div class="p-id">P-004</div></td>
+            <td>04</td>
+            <td><span class="badge b-blue">Answering</span></td>
+            <td><div class="qdots"><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd curr"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><span class="q-txt">Q5 / 10</span></div></td>
+            <td><div class="ppips"><div class="pp done"></div><div class="pp done"></div><div class="pp curr"></div><div class="pp"></div><span class="pp-txt">2 / 4</span></div></td>
+            <td><span class="time-ok">1m 58s</span></td>
+            <td style="font-size:11px;color:var(--muted)">10:12 AM</td>
+            <td><div class="acts"><div class="act act-skip">Skip Q</div><div class="act act-flag">Flag</div><div class="act act-remove" onclick="openModal(event)">Remove</div></div></td>
+          </tr>
+
+          <tr>
+            <td><div class="p-name">Mei L.</div><div class="p-id">P-005</div></td>
+            <td>05</td>
+            <td><span class="badge b-blue">Answering</span></td>
+            <td><div class="qdots"><div class="qd done"></div><div class="qd done"></div><div class="qd curr"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><span class="q-txt">Q3 / 10</span></div></td>
+            <td><div class="ppips"><div class="pp done"></div><div class="pp curr"></div><div class="pp"></div><div class="pp"></div><span class="pp-txt">1 / 4</span></div></td>
+            <td><span class="time-ok">3m 10s</span></td>
+            <td style="font-size:11px;color:var(--muted)">10:11 AM</td>
+            <td><div class="acts"><div class="act act-skip">Skip Q</div><div class="act act-flag">Flag</div><div class="act act-remove" onclick="openModal(event)">Remove</div></div></td>
+          </tr>
+
+          <tr>
+            <td><div class="p-name">Dan O.</div><div class="p-id">P-006</div></td>
+            <td>06</td>
+            <td><span class="badge b-blue">Answering</span></td>
+            <td><div class="qdots"><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd done"></div><div class="qd curr"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><span class="q-txt">Q7 / 10</span></div></td>
+            <td><div class="ppips"><div class="pp done"></div><div class="pp done"></div><div class="pp done"></div><div class="pp curr"></div><span class="pp-txt">3 / 4</span></div></td>
+            <td><span class="time-ok">0m 18s</span></td>
+            <td style="font-size:11px;color:var(--muted)">10:14 AM</td>
+            <td><div class="acts"><div class="act act-skip">Skip Q</div><div class="act act-flag">Flag</div><div class="act act-remove" onclick="openModal(event)">Remove</div></div></td>
+          </tr>
+
+          <!-- FLAGGED -->
+          <tr class="row-flag">
+            <td><div class="p-name">Omar F.</div><div class="p-id">P-007</div></td>
+            <td>07</td>
+            <td><span class="badge b-amber">Flagged</span></td>
+            <td><div class="qdots"><div class="qd done"></div><div class="qd done"></div><div class="qd curr"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><span class="q-txt">Q3 / 10</span></div></td>
+            <td><div class="ppips"><div class="pp done"></div><div class="pp curr"></div><div class="pp"></div><div class="pp"></div><span class="pp-txt">1 / 4</span></div></td>
+            <td><span class="time-crit">14m 22s ⚠</span></td>
+            <td style="font-size:11px;color:var(--amber)">Stalled · flagged 10:00</td>
+            <td><div class="acts"><div class="act act-unflag">Unflag</div><div class="act act-skip">Skip Q</div><div class="act act-remove" onclick="openModal(event)">Remove</div></div></td>
+          </tr>
+
+          <!-- WAITING -->
+          <tr>
+            <td><div class="p-name">Aisha R.</div><div class="p-id">P-008</div></td>
+            <td>08</td>
+            <td><span class="badge b-gray">Waiting</span></td>
+            <td><div class="qdots"><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><span class="q-txt">Not started</span></div></td>
+            <td><div class="ppips"><div class="pp"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div><span class="pp-txt">0 / 4</span></div></td>
+            <td><span class="time-ok">—</span></td>
+            <td style="font-size:11px;color:var(--muted)">Arrived 09:58</td>
+            <td><div class="acts"><div class="act act-nudge">Nudge</div><div class="act act-remove" onclick="openModal(event)">Remove</div></div></td>
+          </tr>
+
+          <!-- REMOVED -->
+          <tr class="row-removed">
+            <td><div class="p-name">Yusuf A.</div><div class="p-id">P-009</div></td>
+            <td>—</td>
+            <td><span class="badge b-red">Removed</span></td>
+            <td><div class="qdots"><div class="qd done"></div><div class="qd skip"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><div class="qd"></div><span class="q-txt">Q2 / 10</span></div></td>
+            <td><div class="ppips"><div class="pp done"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div><span class="pp-txt">1 / 4</span></div></td>
+            <td><span class="time-ok">—</span></td>
+            <td style="font-size:11px;color:var(--red)">Allergy disclosed · 09:51</td>
+            <td><div class="acts"><div class="act act-reinstate">Reinstate</div><div class="act act-view">Audit</div></div></td>
+          </tr>
+
+          <!-- ADD MAKEUP -->
+          <tr>
+            <td class="makeup-cell" colspan="8">
+              <div class="makeup-btn">+ Add makeup panelist</div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <div class="bb-stats">
+      <div class="bb-stat">Valid responses <strong>7</strong></div>
+      <div class="bb-divider"></div>
+      <div class="bb-stat">Products covered <strong>3 / 4</strong></div>
+      <div class="bb-divider"></div>
+      <div class="bb-stat">Avg time on Q <strong>2m 14s</strong></div>
+      <div class="bb-divider"></div>
+      <div class="bb-stat">Session started <strong>09:00 AM</strong></div>
+    </div>
+    <div class="bb-actions">
+      <button class="btn btn-danger">End session</button>
+      <button class="btn btn-primary">Push to analysis →</button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- REMOVAL MODAL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">Remove respondent</div>
+    <div class="modal-sub">Soft-delete only — responses are retained and can be reinstated at any time.</div>
+    <div class="modal-label">Reason for removal</div>
+    <div class="reasons">
+      <div class="reason" onclick="selReason(this)"><div class="r-dot"></div>Allergy or intolerance disclosed</div>
+      <div class="reason" onclick="selReason(this)"><div class="r-dot"></div>Equipment failure in booth</div>
+      <div class="reason" onclick="selReason(this)"><div class="r-dot"></div>Panelist withdrew consent</div>
+      <div class="reason" onclick="selReason(this)"><div class="r-dot"></div>Response quality concern</div>
+      <div class="reason" onclick="selReason(this)"><div class="r-dot"></div>Other (add note below)</div>
+    </div>
+    <div class="modal-label">Notes (optional)</div>
+    <textarea placeholder="Add context for the audit log…"></textarea>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="closeModal()">Confirm remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUDIT DRAWER -->
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-title">Audit log — Session #2409</div>
+    <div class="drawer-x" onclick="toggleDrawer()">✕</div>
+  </div>
+  <div class="drawer-body">
+    <div class="aentry">
+      <div class="adot-col"><div class="adot" style="background:var(--red)"></div><div class="aline"></div></div>
+      <div style="flex:1;min-width:0"><div class="aaction">P-009 removed — allergy disclosed</div><div class="awho">Sara Ahsan · Lab Manager</div></div>
+      <div class="atime">09:51</div>
+    </div>
+    <div class="aentry">
+      <div class="adot-col"><div class="adot" style="background:var(--amber)"></div><div class="aline"></div></div>
+      <div style="flex:1;min-width:0"><div class="aaction">P-007 flagged — stalled on Q3 &gt;10 min</div><div class="awho">Auto-flagged · system</div></div>
+      <div class="atime">10:00</div>
+    </div>
+    <div class="aentry">
+      <div class="adot-col"><div class="adot" style="background:var(--green)"></div><div class="aline"></div></div>
+      <div style="flex:1;min-width:0"><div class="aaction">P-001 completed all responses</div><div class="awho">System</div></div>
+      <div class="atime">10:08</div>
+    </div>
+    <div class="aentry">
+      <div class="adot-col"><div class="adot" style="background:var(--green)"></div><div class="aline"></div></div>
+      <div style="flex:1;min-width:0"><div class="aaction">P-002 completed all responses</div><div class="awho">System</div></div>
+      <div class="atime">10:11</div>
+    </div>
+    <div class="aentry">
+      <div class="adot-col"><div class="adot" style="background:var(--blue)"></div></div>
+      <div style="flex:1;min-width:0"><div class="aaction">Session started · 8 panelists assigned</div><div class="awho">Sara Ahsan · Lab Manager</div></div>
+      <div class="atime">09:00</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+  (function () {
+    const current = (window.location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
+    document.querySelectorAll('.sidebar .nav-item').forEach((el) => el.classList.remove('active'));
+    document.querySelectorAll('.sidebar a.nav-item[href]').forEach((a) => {
+      const target = (a.getAttribute('href') || '').split('?')[0].split('#')[0];
+      if (target && target === current) a.classList.add('active');
+    });
+  })();
+
+  function selReason(el) {
+    document.querySelectorAll('.reason').forEach(r => r.classList.remove('sel'));
+    el.classList.add('sel');
+  }
+  function openModal(e) { e.stopPropagation(); document.getElementById('overlay').classList.add('open'); }
+  function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+  function toggleDrawer() { document.getElementById('drawer').classList.toggle('open'); }
+  document.querySelectorAll('.fchip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.fchip').forEach(x => x.classList.remove('on'));
+      c.classList.add('on');
+    });
+  });
+</script>
+</body>
+</html>

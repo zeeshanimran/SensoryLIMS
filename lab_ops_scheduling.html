@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab Ops — Session Scheduling</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #f4f5f7;
+    --surface:     #ffffff;
+    --surface2:    #f8f9fb;
+    --border:      #e4e7ec;
+    --border2:     #d0d5dd;
+    --text:        #101828;
+    --text2:       #344054;
+    --muted:       #667085;
+    --dim:         #98a2b3;
+
+    --blue:        #2563eb;
+    --blue-light:  #eff6ff;
+    --blue-mid:    #bfdbfe;
+    --teal:        #0d9488;
+    --teal-light:  #f0fdfa;
+    --teal-mid:    #99f6e4;
+    --green:       #16a34a;
+    --green-light: #f0fdf4;
+    --green-mid:   #bbf7d0;
+    --amber:       #d97706;
+    --amber-light: #fffbeb;
+    --amber-mid:   #fde68a;
+    --red:         #dc2626;
+    --red-light:   #fef2f2;
+    --red-mid:     #fecaca;
+    --purple:      #7c3aed;
+    --purple-light:#f5f3ff;
+    --purple-mid:  #ddd6fe;
+    --gray-light:  #f9fafb;
+
+    --font: 'Inter', sans-serif;
+    --radius: 8px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 216px; min-height: 100vh;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sidebar-logo {
+    padding: 18px 16px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 6px; background: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+  }
+  .logo-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .logo-sub  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .nav-section { padding: 12px 8px 4px; }
+  .nav-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--dim); padding: 0 8px; margin-bottom: 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 500;
+    transition: all .12s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--text2); }
+  .nav-item.active { background: var(--blue-light); color: var(--blue); }
+  .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .5; flex-shrink: 0; }
+  .nav-item.active .nav-dot { opacity: 1; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 10px;
+    background: var(--blue-light); color: var(--blue);
+  }
+  .sidebar-footer {
+    margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--blue-light); border: 1px solid var(--blue-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--blue); font-weight: 600; flex-shrink: 0;
+  }
+  .av-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .av-role { font-size: 10px; color: var(--muted); }
+
+  /* ── MAIN ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+  .topbar {
+    height: 52px; background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; flex-shrink: 0;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .page-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .topbar-right { display: flex; gap: 8px; }
+  .btn {
+    padding: 6px 14px; border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all .12s; white-space: nowrap;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text2);
+  }
+  .btn:hover { background: var(--bg); border-color: var(--border2); }
+  .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-active { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+
+  /* ── LAYOUT ── */
+  .body-layout {
+    flex: 1; display: grid;
+    grid-template-columns: 1fr 320px;
+    overflow: hidden;
+  }
+
+  /* ── CALENDAR PANEL ── */
+  .cal-panel {
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .cal-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .cal-nav { display: flex; align-items: center; gap: 8px; }
+  .nav-arrow {
+    width: 28px; height: 28px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); font-size: 14px;
+    transition: all .1s;
+  }
+  .nav-arrow:hover { background: var(--bg); border-color: var(--border2); color: var(--text); }
+  .cal-month { font-size: 14px; font-weight: 600; color: var(--text); }
+  .view-tabs { display: flex; gap: 2px; background: var(--bg); border-radius: var(--radius-sm); padding: 3px; border: 1px solid var(--border); }
+  .view-tab {
+    padding: 4px 12px; border-radius: 5px;
+    font-size: 11px; font-weight: 500; color: var(--muted);
+    cursor: pointer; transition: all .1s;
+  }
+  .view-tab.on { background: var(--surface); color: var(--text2); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+  /* ── WEEK GRID ── */
+  .week-grid { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+  .day-headers {
+    display: grid; grid-template-columns: 52px repeat(7,1fr);
+    border-bottom: 1px solid var(--border);
+    background: var(--gray-light); flex-shrink: 0;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .day-header {
+    padding: 8px 6px; text-align: center;
+    border-right: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .day-header:last-child { border-right: none; }
+  .day-header .dow { color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: .04em; }
+  .day-header .dom { font-size: 16px; font-weight: 600; color: var(--text); margin-top: 2px; }
+  .day-header.today .dom {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .time-grid {
+    display: grid; grid-template-columns: 52px repeat(7,1fr);
+    flex: 1;
+  }
+  .time-col { border-right: 1px solid var(--border); }
+  .time-slot {
+    height: 60px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: flex-end;
+    padding: 4px 8px 0 0;
+    font-size: 10px; color: var(--dim); font-weight: 500;
+  }
+  .day-col {
+    border-right: 1px solid var(--border); position: relative;
+    min-height: 600px;
+  }
+  .day-col:last-child { border-right: none; }
+  .day-slot {
+    height: 60px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background .08s;
+  }
+  .day-slot:hover { background: var(--blue-light); }
+
+  /* session blocks */
+  .sess-block {
+    position: absolute; left: 3px; right: 3px;
+    border-radius: var(--radius-sm);
+    padding: 5px 7px; cursor: pointer;
+    transition: opacity .1s; overflow: hidden;
+    border-left: 3px solid;
+  }
+  .sess-block:hover { opacity: .85; }
+  .sb-title { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sb-meta  { font-size: 10px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .sb-blue   { background: var(--blue-light);   border-color: var(--blue);   }
+  .sb-blue   .sb-title { color: var(--blue); }
+  .sb-blue   .sb-meta  { color: #60a5fa; }
+
+  .sb-teal   { background: var(--teal-light);   border-color: var(--teal);   }
+  .sb-teal   .sb-title { color: var(--teal); }
+  .sb-teal   .sb-meta  { color: #2dd4bf; }
+
+  .sb-green  { background: var(--green-light);  border-color: var(--green);  }
+  .sb-green  .sb-title { color: var(--green); }
+  .sb-green  .sb-meta  { color: #4ade80; }
+
+  .sb-amber  { background: var(--amber-light);  border-color: var(--amber);  }
+  .sb-amber  .sb-title { color: var(--amber); }
+  .sb-amber  .sb-meta  { color: #fbbf24; }
+
+  .sb-purple { background: var(--purple-light); border-color: var(--purple); }
+  .sb-purple .sb-title { color: var(--purple); }
+  .sb-purple .sb-meta  { color: #a78bfa; }
+
+  /* ── SIDE PANEL ── */
+  .side-panel {
+    display: flex; flex-direction: column;
+    background: var(--surface); overflow-y: auto;
+  }
+
+  .side-section {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .side-title {
+    font-size: 12px; font-weight: 600; color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  /* mini month */
+  .mini-month { }
+  .mini-dow-row {
+    display: grid; grid-template-columns: repeat(7,1fr);
+    margin-bottom: 4px;
+  }
+  .mini-dow {
+    text-align: center; font-size: 9px; font-weight: 600;
+    color: var(--dim); letter-spacing: .04em; text-transform: uppercase;
+  }
+  .mini-dates { display: grid; grid-template-columns: repeat(7,1fr); gap: 1px; }
+  .mini-d {
+    text-align: center; font-size: 11px; color: var(--muted);
+    padding: 4px 2px; border-radius: 4px; cursor: pointer;
+    transition: all .1s;
+  }
+  .mini-d:hover { background: var(--bg); color: var(--text2); }
+  .mini-d.other { color: var(--dim); }
+  .mini-d.has-event { font-weight: 600; color: var(--text2); }
+  .mini-d.today {
+    background: var(--blue); color: #fff; font-weight: 600;
+  }
+  .mini-d.selected { background: var(--blue-light); color: var(--blue); font-weight: 600; }
+
+  /* upcoming list */
+  .upcoming-item {
+    display: flex; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+    transition: background .08s;
+  }
+  .upcoming-item:last-child { border-bottom: none; }
+  .upcoming-item:hover { opacity: .8; }
+  .up-bar { width: 3px; border-radius: 2px; flex-shrink: 0; align-self: stretch; }
+  .up-info { flex: 1; min-width: 0; }
+  .up-name { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .up-meta { font-size: 10px; color: var(--muted); }
+  .up-badge {
+    font-size: 10px; font-weight: 500; padding: 2px 7px;
+    border-radius: 20px; flex-shrink: 0; align-self: flex-start;
+    margin-top: 2px;
+  }
+
+  /* booth availability */
+  .booth-avail { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+  .ba-booth {
+    border-radius: var(--radius-sm); padding: 6px 8px;
+    border: 1px solid var(--border); text-align: center;
+  }
+  .ba-num { font-size: 13px; font-weight: 700; }
+  .ba-status { font-size: 9px; font-weight: 500; margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+  .ba-booth.free   { background: var(--green-light); border-color: var(--green-mid); }
+  .ba-booth.free   .ba-num { color: var(--green); }
+  .ba-booth.free   .ba-status { color: var(--green); }
+  .ba-booth.busy   { background: var(--blue-light);  border-color: var(--blue-mid); }
+  .ba-booth.busy   .ba-num { color: var(--blue); }
+  .ba-booth.busy   .ba-status { color: var(--blue); }
+  .ba-booth.maint  { background: var(--amber-light); border-color: var(--amber-mid); }
+  .ba-booth.maint  .ba-num { color: var(--amber); }
+  .ba-booth.maint  .ba-status { color: var(--amber); }
+
+  /* new session form */
+  .form-row { margin-bottom: 10px; }
+  .form-label { font-size: 11px; font-weight: 500; color: var(--text2); margin-bottom: 4px; }
+  .form-input, .form-select {
+    width: 100%; padding: 7px 10px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 12px; color: var(--text);
+    background: var(--surface); transition: border-color .1s;
+    appearance: none;
+  }
+  .form-input:focus, .form-select:focus { outline: none; border-color: var(--blue); }
+  .form-input::placeholder { color: var(--dim); }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .btn-full { width: 100%; padding: 8px; text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">SL</div>
+    <div>
+      <div class="logo-text">SensoryLIMS</div>
+      <div class="logo-sub">Lab ops &amp; monitoring</div>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-item" href="lab_ops_dashboard_v2.html"><span class="nav-dot"></span>Dashboard</a>
+    <a class="nav-item" href="lab_ops_live_monitor_v2.html"><span class="nav-dot"></span>Live sessions <span class="nav-badge">3</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Lab</div>
+    <a class="nav-item" href="lab_ops_scheduling.html"><span class="nav-dot"></span>Session scheduling</a>
+    <a class="nav-item" href="lab_ops_panel_management.html"><span class="nav-dot"></span>Panel management</a>
+    <a class="nav-item" href="lab_ops_invitations.html"><span class="nav-dot"></span>Invitations</a>
+    <a class="nav-item" href="lab_ops_sample_prep.html"><span class="nav-dot"></span>Sample prep</a>
+    <a class="nav-item" href="lab_ops_inventory.html"><span class="nav-dot"></span>Inventory</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Respondents</div>
+    <a class="nav-item" href="lab_ops_respondent_tracker.html?tab=tracker"><span class="nav-dot"></span>Respondent tracker</a>
+    <a class="nav-item" href="lab_ops_respondent_tracker.html?tab=management"><span class="nav-dot"></span>Response management</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar">SA</div>
+    <div>
+      <div class="av-name">Sara Ahsan</div>
+      <div class="av-role">Lab Manager</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="page-title">Session scheduling</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-active">Week</button>
+      <button class="btn">Month</button>
+      <button class="btn">List</button>
+      <button class="btn btn-primary" onclick="toggleForm()">+ New session</button>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body-layout">
+
+    <!-- CALENDAR -->
+    <div class="cal-panel">
+
+      <div class="cal-toolbar">
+        <div class="cal-nav">
+          <div class="nav-arrow">&#8249;</div>
+          <div class="cal-month">May 2026</div>
+          <div class="nav-arrow">&#8250;</div>
+        </div>
+        <button class="btn" style="font-size:11px;padding:5px 12px">Today</button>
+      </div>
+
+      <div class="week-grid">
+        <!-- Day headers -->
+        <div class="day-headers">
+          <div class="time-col" style="border-right:1px solid var(--border)"></div>
+          <div class="day-header"><div class="dow">Mon</div><div class="dom">4</div></div>
+          <div class="day-header today"><div class="dow">Tue</div><div class="dom">5</div></div>
+          <div class="day-header"><div class="dow">Wed</div><div class="dom">6</div></div>
+          <div class="day-header"><div class="dow">Thu</div><div class="dom">7</div></div>
+          <div class="day-header"><div class="dow">Fri</div><div class="dom">8</div></div>
+          <div class="day-header"><div class="dow">Sat</div><div class="dom">9</div></div>
+          <div class="day-header"><div class="dow">Sun</div><div class="dom">10</div></div>
+        </div>
+
+        <!-- Time grid -->
+        <div class="time-grid">
+          <!-- Time labels -->
+          <div class="time-col">
+            <div class="time-slot">08:00</div>
+            <div class="time-slot">09:00</div>
+            <div class="time-slot">10:00</div>
+            <div class="time-slot">11:00</div>
+            <div class="time-slot">12:00</div>
+            <div class="time-slot">13:00</div>
+            <div class="time-slot">14:00</div>
+            <div class="time-slot">15:00</div>
+            <div class="time-slot">16:00</div>
+            <div class="time-slot">17:00</div>
+          </div>
+
+          <!-- MON -->
+          <div class="day-col">
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <!-- session block -->
+            <div class="sess-block sb-teal" style="top:60px;height:90px" onclick="selectSession('Cracker texture A')">
+              <div class="sb-title">Cracker texture A</div>
+              <div class="sb-meta">09:00 · 6 panelists</div>
+            </div>
+            <div class="sess-block sb-purple" style="top:300px;height:120px" onclick="selectSession('Aroma profiling B')">
+              <div class="sb-title">Aroma profiling B</div>
+              <div class="sb-meta">13:00 · 8 panelists</div>
+            </div>
+          </div>
+
+          <!-- TUE (today) -->
+          <div class="day-col" style="background:rgba(37,99,235,.02)">
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="sess-block sb-blue" style="top:60px;height:90px" onclick="selectSession('Yoghurt texture A')">
+              <div class="sb-title">Yoghurt texture A</div>
+              <div class="sb-meta">09:00 · 8 panelists · Live</div>
+            </div>
+            <div class="sess-block sb-blue" style="top:150px;height:60px" onclick="selectSession('Beverage sweetness')">
+              <div class="sb-title">Beverage sweetness</div>
+              <div class="sb-meta">10:30 · 6 panelists</div>
+            </div>
+            <div class="sess-block sb-blue" style="top:180px;height:60px" onclick="selectSession('Cracker crunch test')">
+              <div class="sb-title">Cracker crunch test</div>
+              <div class="sb-meta">11:00 · 4 panelists</div>
+            </div>
+            <div class="sess-block sb-amber" style="top:300px;height:90px" onclick="selectSession('Dairy aroma profiling')">
+              <div class="sb-title">Dairy aroma profiling</div>
+              <div class="sb-meta">13:00 · 10 panelists · Prep</div>
+            </div>
+            <div class="sess-block sb-green" style="top:450px;height:90px" onclick="selectSession('Sauce intensity ranking')">
+              <div class="sb-title">Sauce intensity ranking</div>
+              <div class="sb-meta">15:30 · 8 panelists</div>
+            </div>
+          </div>
+
+          <!-- WED -->
+          <div class="day-col">
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="sess-block sb-teal" style="top:120px;height:90px" onclick="selectSession('Sweetener triangle test')">
+              <div class="sb-title">Sweetener triangle</div>
+              <div class="sb-meta">10:00 · 12 panelists</div>
+            </div>
+            <div class="sess-block sb-green" style="top:360px;height:60px" onclick="selectSession('Texture profiling C')">
+              <div class="sb-title">Texture profiling C</div>
+              <div class="sb-meta">14:00 · 6 panelists</div>
+            </div>
+          </div>
+
+          <!-- THU -->
+          <div class="day-col">
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="sess-block sb-purple" style="top:60px;height:120px" onclick="selectSession('Colour perception study')">
+              <div class="sb-title">Colour perception</div>
+              <div class="sb-meta">09:00 · 10 panelists</div>
+            </div>
+          </div>
+
+          <!-- FRI -->
+          <div class="day-col">
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="sess-block sb-blue" style="top:120px;height:90px" onclick="selectSession('Snack liking panel')">
+              <div class="sb-title">Snack liking panel</div>
+              <div class="sb-meta">10:00 · 14 panelists</div>
+            </div>
+            <div class="sess-block sb-amber" style="top:300px;height:60px" onclick="selectSession('Aftertaste study')">
+              <div class="sb-title">Aftertaste study</div>
+              <div class="sb-meta">13:00 · 8 panelists</div>
+            </div>
+          </div>
+
+          <!-- SAT -->
+          <div class="day-col" style="background:var(--gray-light)">
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+          </div>
+
+          <!-- SUN -->
+          <div class="day-col" style="background:var(--gray-light);border-right:none">
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+            <div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div><div class="day-slot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDE PANEL -->
+    <div class="side-panel">
+
+      <!-- Mini calendar -->
+      <div class="side-section">
+        <div class="side-title">May 2026</div>
+        <div class="mini-month">
+          <div class="mini-dow-row">
+            <div class="mini-dow">M</div><div class="mini-dow">T</div><div class="mini-dow">W</div>
+            <div class="mini-dow">T</div><div class="mini-dow">F</div><div class="mini-dow">S</div><div class="mini-dow">S</div>
+          </div>
+          <div class="mini-dates">
+            <div class="mini-d other">28</div><div class="mini-d other">29</div><div class="mini-d other">30</div>
+            <div class="mini-d other">1</div><div class="mini-d other">2</div><div class="mini-d other">3</div><div class="mini-d other">4</div>
+            <div class="mini-d has-event">4</div><div class="mini-d today">5</div><div class="mini-d has-event">6</div>
+            <div class="mini-d has-event">7</div><div class="mini-d has-event">8</div><div class="mini-d">9</div><div class="mini-d">10</div>
+            <div class="mini-d">11</div><div class="mini-d has-event">12</div><div class="mini-d has-event">13</div>
+            <div class="mini-d">14</div><div class="mini-d has-event">15</div><div class="mini-d">16</div><div class="mini-d">17</div>
+            <div class="mini-d">18</div><div class="mini-d">19</div><div class="mini-d has-event">20</div>
+            <div class="mini-d has-event">21</div><div class="mini-d">22</div><div class="mini-d">23</div><div class="mini-d">24</div>
+            <div class="mini-d">25</div><div class="mini-d">26</div><div class="mini-d">27</div>
+            <div class="mini-d">28</div><div class="mini-d">29</div><div class="mini-d">30</div><div class="mini-d">31</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booth availability -->
+      <div class="side-section">
+        <div class="side-title">Booth availability — now</div>
+        <div class="booth-avail">
+          <div class="ba-booth busy"><div class="ba-num">01</div><div class="ba-status">In use</div></div>
+          <div class="ba-booth busy"><div class="ba-num">02</div><div class="ba-status">In use</div></div>
+          <div class="ba-booth busy"><div class="ba-num">03</div><div class="ba-status">In use</div></div>
+          <div class="ba-booth busy"><div class="ba-num">04</div><div class="ba-status">In use</div></div>
+          <div class="ba-booth free"><div class="ba-num">05</div><div class="ba-status">Free</div></div>
+          <div class="ba-booth free"><div class="ba-num">06</div><div class="ba-status">Free</div></div>
+          <div class="ba-booth busy"><div class="ba-num">07</div><div class="ba-status">In use</div></div>
+          <div class="ba-booth maint"><div class="ba-num">08</div><div class="ba-status">Maint.</div></div>
+          <div class="ba-booth free"><div class="ba-num">09</div><div class="ba-status">Free</div></div>
+          <div class="ba-booth free"><div class="ba-num">10</div><div class="ba-status">Free</div></div>
+          <div class="ba-booth free"><div class="ba-num">11</div><div class="ba-status">Free</div></div>
+          <div class="ba-booth free"><div class="ba-num">12</div><div class="ba-status">Free</div></div>
+        </div>
+      </div>
+
+      <!-- Upcoming sessions -->
+      <div class="side-section">
+        <div class="side-title">Upcoming today</div>
+        <div class="upcoming-item">
+          <div class="up-bar" style="background:var(--amber)"></div>
+          <div class="up-info">
+            <div class="up-name">Dairy aroma profiling</div>
+            <div class="up-meta">13:00 · 10 panelists · Booths 1–5</div>
+          </div>
+          <div class="up-badge" style="background:var(--amber-light);color:var(--amber);border:1px solid var(--amber-mid)">Prep</div>
+        </div>
+        <div class="upcoming-item">
+          <div class="up-bar" style="background:var(--green)"></div>
+          <div class="up-info">
+            <div class="up-name">Sauce intensity ranking</div>
+            <div class="up-meta">15:30 · 8 panelists · Booths 3–6</div>
+          </div>
+          <div class="up-badge" style="background:var(--gray-light);color:var(--muted);border:1px solid var(--border)">Scheduled</div>
+        </div>
+      </div>
+
+      <!-- New session form (toggled) -->
+      <div class="side-section" id="new-form" style="display:none">
+        <div class="side-title">New session</div>
+        <div class="form-row">
+          <div class="form-label">Study / survey</div>
+          <select class="form-select">
+            <option>Yoghurt texture study A</option>
+            <option>Beverage sweetness panel</option>
+            <option>Dairy aroma profiling</option>
+            <option>Snack liking panel</option>
+          </select>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <div class="form-label">Date</div>
+            <input class="form-input" type="date" value="2026-05-05">
+          </div>
+          <div>
+            <div class="form-label">Start time</div>
+            <input class="form-input" type="time" value="09:00">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <div class="form-label">Duration</div>
+            <select class="form-select">
+              <option>30 min</option>
+              <option>45 min</option>
+              <option selected>60 min</option>
+              <option>90 min</option>
+              <option>120 min</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label">Booths</div>
+            <input class="form-input" type="text" placeholder="e.g. 1–4">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Panel group</div>
+          <select class="form-select">
+            <option>Trained panel A (12)</option>
+            <option>Hedonic panel B (24)</option>
+            <option>Consumer panel C (60)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Notes</div>
+          <input class="form-input" type="text" placeholder="Optional session notes">
+        </div>
+        <button class="btn btn-primary btn-full">Create session</button>
+        <button class="btn btn-full" style="margin-top:6px" onclick="toggleForm()">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const current = (window.location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
+    document.querySelectorAll('.sidebar .nav-item').forEach((el) => el.classList.remove('active'));
+    document.querySelectorAll('.sidebar a.nav-item[href]').forEach((a) => {
+      const target = (a.getAttribute('href') || '').split('?')[0].split('#')[0];
+      if (target && target === current) a.classList.add('active');
+    });
+  })();
+
+  function toggleForm() {
+    const f = document.getElementById('new-form');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  }
+  function selectSession(name) {
+    console.log('Selected:', name);
+  }
+  document.querySelectorAll('.view-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.view-tab').forEach(x => x.classList.remove('on'));
+      t.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.mini-d').forEach(d => {
+    d.addEventListener('click', () => {
+      document.querySelectorAll('.mini-d').forEach(x => x.classList.remove('selected'));
+      if (!d.classList.contains('today')) d.classList.add('selected');
+    });
+  });
+</script>
+</body>
+</html>
